@@ -1,0 +1,56 @@
+.back-link {
+  display: inline-block;
+  margin-bottom: var(--space-3);
+  color: var(--ink-soft);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.back-link:hover {
+  color: var(--ink);
+}
+
+.exchange-detail-grid {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: var(--space-4);
+}
+
+.exchange-detail-image {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  aspect-ratio: 1;
+  overflow: hidden;
+}
+
+.exchange-detail-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.exchange-detail-category {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--brand);
+  text-transform: none;
+}
+
+.exchange-detail-desc {
+  font-size: 1.05rem;
+  color: var(--ink-soft);
+  max-width: 55ch;
+}
+
+.exchange-detail-owner {
+  font-size: 0.92rem;
+  color: var(--ink-soft);
+  margin-bottom: var(--space-3);
+}
+
+@media (max-width: 720px) {
+  .exchange-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}

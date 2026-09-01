@@ -1,0 +1,19 @@
+.request-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.status-badge {
+  display: inline-block;
+  margin-top: var(--space-1);
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
