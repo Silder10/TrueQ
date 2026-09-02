@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
+import { MoreVertical, Shield, Trash2 } from "lucide-react";
 import { api } from "../api/client";
 import "./AdminPage.css";
-import "./RequestsPage.css";
 
 export function AdminPage() {
   const [stats, setStats] = useState(null);
@@ -9,6 +9,7 @@ export function AdminPage() {
   const [exchanges, setExchanges] = useState([]);
   const [error, setError] = useState(null);
   const [busyId, setBusyId] = useState(null);
+  const [openMenu, setOpenMenu] = useState(null);
 
   const loadAll = () => {
     Promise.all([
@@ -28,6 +29,7 @@ export function AdminPage() {
 
   const promote = async (userId) => {
     setBusyId(userId);
+    setOpenMenu(null);
     try {
       await api.post(`/api/admin/users/${userId}/make-admin`);
       loadAll();
@@ -41,6 +43,7 @@ export function AdminPage() {
   const deleteUser = async (userId) => {
     if (!confirm("¿Eliminar este usuario y todo su contenido asociado?")) return;
     setBusyId(userId);
+    setOpenMenu(null);
     try {
       await api.delete(`/api/admin/users/${userId}`);
       loadAll();
@@ -81,50 +84,68 @@ export function AdminPage() {
             <span>Publicaciones</span>
           </div>
           <div className="admin-stat">
-            <strong>{stats.messages_count}</strong>
-            <span>Mensajes</span>
+            <strong>{stats.completed_exchanges_count}</strong>
+            <span>Completados</span>
+          </div>
+          <div className="admin-stat">
+            <strong>{stats.reviews_count}</strong>
+            <span>Reseñas</span>
           </div>
         </div>
       )}
 
       <section className="stack">
         <h2>Usuarios</h2>
-        {users.map((u) => (
-          <div key={u.id} className="request-row">
-            <div>
-              <strong>{u.username}</strong> · {u.email}
-              <div>
-                <span className="status-badge" style={{ background: "#f0eee6", color: "var(--ink-soft)" }}>
-                  {u.role}
-                </span>
+        <div className="admin-table">
+          {users.map((u) => (
+            <div key={u.id} className="admin-table-row">
+              <div className="admin-table-user">
+                <strong>{u.username}</strong>
+                <span>{u.email}</span>
+              </div>
+              <span className={`badge ${u.role === "admin" ? "badge-aceptada" : "badge-cancelado"}`}>{u.role}</span>
+              <div className="admin-menu-wrap">
+                <button className="icon-btn" onClick={() => setOpenMenu(openMenu === u.id ? null : u.id)}>
+                  <MoreVertical size={18} />
+                </button>
+                {openMenu === u.id && (
+                  <div className="admin-menu">
+                    {u.role !== "admin" && (
+                      <button onClick={() => promote(u.id)} disabled={busyId === u.id}>
+                        <Shield size={15} /> Hacer admin
+                      </button>
+                    )}
+                    <button className="admin-menu-danger" onClick={() => deleteUser(u.id)} disabled={busyId === u.id}>
+                      <Trash2 size={15} /> Eliminar
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              {u.role !== "admin" && (
-                <button className="btn btn-outline" disabled={busyId === u.id} onClick={() => promote(u.id)}>
-                  Hacer admin
-                </button>
-              )}
-              <button className="btn btn-danger" disabled={busyId === u.id} onClick={() => deleteUser(u.id)}>
-                Eliminar
-              </button>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </section>
 
       <section className="stack">
         <h2>Publicaciones</h2>
-        {exchanges.map((e) => (
-          <div key={e.id} className="request-row">
-            <div>
-              <strong>{e.title}</strong> — {e.category}
+        <div className="admin-table">
+          {exchanges.map((e) => (
+            <div key={e.id} className="admin-table-row">
+              <div className="admin-table-user">
+                <strong>{e.title}</strong>
+                <span>{e.category}</span>
+              </div>
+              <button
+                className="btn btn-danger btn-icon"
+                disabled={busyId === e.id}
+                onClick={() => deleteExchange(e.id)}
+                aria-label="Eliminar"
+              >
+                <Trash2 size={16} />
+              </button>
             </div>
-            <button className="btn btn-danger" disabled={busyId === e.id} onClick={() => deleteExchange(e.id)}>
-              Eliminar
-            </button>
-          </div>
-        ))}
+          ))}
+        </div>
       </section>
     </div>
   );

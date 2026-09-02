@@ -76,6 +76,37 @@ de los bugs del proyecto original. En resumen, esta versión corrige:
 - `debug` controlado por variable de entorno, nunca hardcodeado en `True`.
 - Suite de tests (`pytest`) que cubre los flujos críticos.
 
+## Rediseño UI/UX + funciones nuevas (segunda ronda)
+
+- **Backend**: modelo `Review` (calificación 1-5 + comentario, solo entre
+  participantes de un intercambio con solicitud aceptada), campo `city` e
+  `interests` en `User`, `Exchange.category` como enum real
+  (Materiales/Bienes/Servicios), campos `offers`/`seeks` separados de
+  `description`. Endpoint nuevo: `GET/POST /api/exchanges/<id>/reviews`,
+  `GET /api/users/<id>/reviews`. Filtro `owner_id` en el listado de exchanges
+  (usado por la pestaña "Intercambios" del perfil).
+- **Frontend**: sistema de diseño nuevo (paleta azul/verde, Inter, esquinas
+  redondeadas, sombras suaves), navegación por drawer + bottom nav en mobile,
+  registro en 5 pasos (datos → contraseña → intereses → ciudad →
+  confirmación), tarjetas de intercambio con estructura "Ofrece/Busca",
+  perfil con tabs (Intercambios/Reseñas) y rating visible.
+- **Nota de alcance**: "ubicación" es por ciudad (texto libre que el usuario
+  edita), no geolocalización GPS con distancia en km — eso quedaría para una
+  fase aparte si lo necesitás.
+- **25/26 → 26/26 tests en verde** tras sumar los de reseñas y filtro por
+  dueño.
+
+## Actualizar una base de datos existente
+
+Como el esquema cambió (tabla `reviews` nueva, columnas nuevas en `users`,
+`category`/`offers`/`seeks` en `exchanges`), si ya tenías `trueq_db` creada de
+una ronda anterior hay que recrearla:
+
+```bash
+mysql -u root -e "DROP DATABASE trueq_db; CREATE DATABASE trueq_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+flask db upgrade
+```
+
 ## Pendiente / próximos pasos sugeridos
 
 - Rate limiting en `/api/auth/login` (Flask-Limiter).

@@ -1,11 +1,18 @@
 import { useEffect, useState } from "react";
+import { Package, Search, Wrench, Boxes } from "lucide-react";
 import { api } from "../api/client";
+import { useAuth } from "../context/AuthContext";
 import { ExchangeCard } from "../components/ExchangeCard";
 import "./ExchangesPage.css";
 
-const CATEGORIES = ["Hogar", "Deportes", "Música", "Libros", "Ropa", "Tecnología"];
+const CATEGORIES = [
+  { value: "Materiales", icon: Boxes },
+  { value: "Bienes", icon: Package },
+  { value: "Servicios", icon: Wrench },
+];
 
 export function ExchangesPage() {
+  const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
@@ -24,53 +31,57 @@ export function ExchangesPage() {
         .then((data) => setItems(data.items))
         .catch((err) => setError(err.message))
         .finally(() => setLoading(false));
-    }, 250); // debounce simple para no golpear la API en cada tecla
+    }, 250);
 
     return () => clearTimeout(timeout);
   }, [search, category]);
 
   return (
     <div className="stack">
-      <div className="exchanges-header">
-        <div>
-          <h1>Explorar</h1>
-          <p>Lo que otros ya no usan, listo para intercambiar.</p>
-        </div>
+      <div className="dashboard-greeting">
+        <h1>Hola, {user?.username} 👋</h1>
+        <p>Encuentra intercambios que podrían interesarte.</p>
       </div>
 
-      <div className="exchanges-filters">
+      <div className="search-bar">
+        <Search size={20} />
         <input
           type="search"
-          placeholder="Buscar por título…"
+          placeholder="¿Qué estás buscando intercambiar?"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="exchanges-search"
         />
-        <div className="exchanges-categories">
+      </div>
+
+      <div className="category-row">
+        <button
+          className={`chip ${category === "" ? "chip-active" : ""}`}
+          onClick={() => setCategory("")}
+        >
+          Todas
+        </button>
+        {CATEGORIES.map(({ value, icon: Icon }) => (
           <button
-            className={`chip ${category === "" ? "chip-active" : ""}`}
-            onClick={() => setCategory("")}
+            key={value}
+            className={`chip ${category === value ? "chip-active" : ""}`}
+            onClick={() => setCategory(value)}
           >
-            Todas
+            <Icon size={15} /> {value}
           </button>
-          {CATEGORIES.map((c) => (
-            <button
-              key={c}
-              className={`chip ${category === c ? "chip-active" : ""}`}
-              onClick={() => setCategory(c)}
-            >
-              {c}
-            </button>
-          ))}
-        </div>
+        ))}
       </div>
 
       {error && <div className="banner banner-error">{error}</div>}
 
       {loading ? (
-        <p>Cargando…</p>
+        <div className="exchanges-grid">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="skeleton-card" />
+          ))}
+        </div>
       ) : items.length === 0 ? (
         <div className="empty-state">
+          <div className="empty-state-icon">📦</div>
           <h3>No hay nada por aquí todavía</h3>
           <p>Prueba con otra categoría, o sé el primero en publicar algo.</p>
         </div>

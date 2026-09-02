@@ -1,75 +1,57 @@
-.exchanges-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+.dashboard-greeting h1 {
+  margin-bottom: 2px;
 }
 
-.exchanges-filters {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.exchanges-search {
-  max-width: 360px;
-  padding: 0.65rem 0.9rem;
-  border: 1.5px solid var(--line);
-  border-radius: 3px;
-  background: var(--surface);
-}
-
-.exchanges-search:focus {
-  border-color: var(--brand);
-  outline: none;
-}
-
-.exchanges-categories {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-}
-
-.chip {
-  padding: 0.4rem 0.9rem;
-  border-radius: 999px;
-  border: 1.5px solid var(--line);
-  background: var(--surface);
+.dashboard-greeting p {
   color: var(--ink-soft);
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
+  margin: 0;
 }
 
-.chip:hover {
-  border-color: var(--ink);
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 0.9rem 1.2rem;
+  box-shadow: var(--shadow-sm);
+  color: var(--ink-soft);
 }
 
-.chip-active {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: #fff;
+.search-bar input {
+  border: none;
+  outline: none;
+  flex: 1;
+  font-size: 1rem;
+  background: transparent;
+}
+
+.category-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
 
 .exchanges-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: var(--space-3);
 }
 
-.empty-state {
-  padding: var(--space-5) var(--space-3);
-  text-align: center;
-  border: 1.5px dashed var(--line);
-  border-radius: 4px;
+.skeleton-card {
+  aspect-ratio: 3 / 4;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(90deg, var(--border) 25%, #f3f4f6 37%, var(--border) 63%);
+  background-size: 400% 100%;
+  animation: skeleton-shimmer 1.4s ease infinite;
 }
 
-.empty-state h3 {
-  margin-bottom: var(--space-1);
-}
-
-.empty-state p {
-  color: var(--ink-soft);
-  margin: 0 auto;
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
 }

@@ -1,0 +1,81 @@
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.profile-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-header-info {
+  flex: 1;
+  min-width: 200px;
+}
+
+.profile-header-info h1 {
+  margin-bottom: 4px;
+}
+
+.profile-meta {
+  display: flex;
+  gap: var(--space-3);
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  margin-bottom: var(--space-1);
+}
+
+.profile-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.profile-tabs {
+  display: flex;
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.profile-tab {
+  background: none;
+  border: none;
+  padding: 0.6rem 0.2rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-right: var(--space-3);
+}
+
+.profile-tab-active {
+  color: var(--primary-dark);
+  border-bottom-color: var(--primary);
+}
+
+.review-row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.review-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.review-row-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.review-row .rating-inline {
+  color: var(--warning);
+  letter-spacing: 1px;
+}

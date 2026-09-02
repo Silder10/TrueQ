@@ -24,6 +24,13 @@ class User(UserMixin, db.Model):
     is_private = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    # Ubicación por ciudad (no GPS/distancia real, ver nota de alcance).
+    city = db.Column(db.String(120))
+
+    # Intereses elegidos en el registro por pasos: lista de categorías
+    # (Materiales/Bienes/Servicios), guardada como JSON.
+    interests = db.Column(db.JSON, default=list)
+
     exchanges = db.relationship(
         "Exchange",
         backref="owner",
@@ -44,6 +51,17 @@ class User(UserMixin, db.Model):
     def is_admin(self):
         return self.role == "admin"
 
+    @property
+    def average_rating(self):
+        reviews = self.reviews_received
+        if not reviews:
+            return None
+        return round(sum(r.rating for r in reviews) / len(reviews), 1)
+
+    @property
+    def reviews_count(self):
+        return len(self.reviews_received)
+
     def to_dict(self, include_email=False):
         data = {
             "id": self.id,
@@ -52,6 +70,10 @@ class User(UserMixin, db.Model):
             "bio": self.bio,
             "role": self.role,
             "is_private": self.is_private,
+            "city": self.city,
+            "interests": self.interests or [],
+            "average_rating": self.average_rating,
+            "reviews_count": self.reviews_count,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
         if include_email:

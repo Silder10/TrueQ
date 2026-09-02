@@ -1,10 +1,39 @@
+import { useState } from "react";
+import {
+  Bell,
+  Heart,
+  Home,
+  LogOut,
+  Menu,
+  MessageCircle,
+  PlusCircle,
+  Search,
+  Settings,
+  Shield,
+  User,
+  X,
+} from "lucide-react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { uploadUrl } from "../api/client";
 import "./AppLayout.css";
+
+const PRIMARY_LINKS = [
+  { to: "/exchanges", label: "Explorar", icon: Home },
+  { to: "/create-exchange", label: "Publicar", icon: PlusCircle },
+  { to: "/conversations", label: "Chats", icon: MessageCircle },
+];
+
+const SECONDARY_LINKS = [
+  { to: "/favorites", label: "Favoritos", icon: Heart },
+  { to: "/requests", label: "Solicitudes", icon: Bell },
+  { to: "/settings", label: "Configuración", icon: Settings },
+];
 
 export function AppLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -16,47 +45,101 @@ export function AppLayout() {
       <header className="app-header">
         <div className="container app-header-inner">
           <NavLink to="/exchanges" className="wordmark">
-            TRUEQ
+            <span className="wordmark-icon">🔄</span> TrueQ
           </NavLink>
 
           {user && (
-            <nav className="app-nav">
-              <NavLink to="/exchanges" className="app-nav-link">
-                Explorar
-              </NavLink>
-              <NavLink to="/create-exchange" className="app-nav-link">
-                Publicar
-              </NavLink>
-              <NavLink to="/requests" className="app-nav-link">
-                Solicitudes
-              </NavLink>
-              <NavLink to="/favorites" className="app-nav-link">
-                Favoritos
-              </NavLink>
-              <NavLink to="/conversations" className="app-nav-link">
-                Mensajes
-              </NavLink>
-              {user.role === "admin" && (
-                <NavLink to="/admin" className="app-nav-link">
-                  Admin
+            <>
+              <div className="app-location">
+                📍 {user.city || "Sin ubicación"}
+              </div>
+
+              <div className="app-header-actions">
+                <NavLink to="/requests" className="icon-btn" aria-label="Notificaciones">
+                  <Bell size={20} />
                 </NavLink>
-              )}
-              <NavLink to="/settings" className="app-nav-link">
-                {user.username}
-              </NavLink>
-              <button className="btn btn-outline app-logout" onClick={handleLogout}>
-                Salir
-              </button>
-            </nav>
+                <NavLink to={`/profile/${user.id}`} className="avatar-link">
+                  <img src={uploadUrl(user.avatar)} alt="" className="avatar-thumb" />
+                </NavLink>
+                <button className="icon-btn" onClick={() => setMenuOpen(true)} aria-label="Menú">
+                  <Menu size={22} />
+                </button>
+              </div>
+            </>
           )}
         </div>
       </header>
+
+      {menuOpen && (
+        <div className="drawer-overlay" onClick={() => setMenuOpen(false)}>
+          <nav className="drawer" onClick={(e) => e.stopPropagation()}>
+            <div className="drawer-header">
+              <span className="wordmark">🔄 TrueQ</span>
+              <button className="icon-btn" onClick={() => setMenuOpen(false)} aria-label="Cerrar">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="drawer-section">
+              {PRIMARY_LINKS.map(({ to, label, icon: Icon }) => (
+                <NavLink key={to} to={to} className="drawer-link" onClick={() => setMenuOpen(false)}>
+                  <Icon size={18} /> {label}
+                </NavLink>
+              ))}
+            </div>
+
+            <div className="drawer-section">
+              {SECONDARY_LINKS.map(({ to, label, icon: Icon }) => (
+                <NavLink key={to} to={to} className="drawer-link" onClick={() => setMenuOpen(false)}>
+                  <Icon size={18} /> {label}
+                </NavLink>
+              ))}
+              <NavLink to={`/profile/${user?.id}`} className="drawer-link" onClick={() => setMenuOpen(false)}>
+                <User size={18} /> Mi perfil
+              </NavLink>
+              {user?.role === "admin" && (
+                <NavLink to="/admin" className="drawer-link" onClick={() => setMenuOpen(false)}>
+                  <Shield size={18} /> Administración
+                </NavLink>
+              )}
+            </div>
+
+            <button className="drawer-link drawer-logout" onClick={handleLogout}>
+              <LogOut size={18} /> Cerrar sesión
+            </button>
+          </nav>
+        </div>
+      )}
 
       <main className="app-main">
         <div className="container">
           <Outlet />
         </div>
       </main>
+
+      {user && (
+        <nav className="bottom-nav">
+          <NavLink to="/exchanges" className="bottom-nav-link" end>
+            <Home size={22} />
+            <span>Inicio</span>
+          </NavLink>
+          <NavLink to="/exchanges" className="bottom-nav-link">
+            <Search size={22} />
+            <span>Explorar</span>
+          </NavLink>
+          <NavLink to="/create-exchange" className="bottom-nav-link bottom-nav-cta">
+            <PlusCircle size={26} />
+          </NavLink>
+          <NavLink to="/conversations" className="bottom-nav-link">
+            <MessageCircle size={22} />
+            <span>Chats</span>
+          </NavLink>
+          <NavLink to={`/profile/${user.id}`} className="bottom-nav-link">
+            <User size={22} />
+            <span>Perfil</span>
+          </NavLink>
+        </nav>
+      )}
     </div>
   );
 }

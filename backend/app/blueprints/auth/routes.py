@@ -3,7 +3,7 @@ from flask_login import current_user, login_required, login_user, logout_user
 from flask_wtf.csrf import generate_csrf
 
 from app.extensions import db
-from app.models import User
+from app.models import ExchangeCategory, User
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
@@ -26,6 +26,8 @@ def register():
     username = (data.get("username") or "").strip()
     email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
+    city = (data.get("city") or "").strip() or None
+    interests = data.get("interests") or []
 
     errors = {}
     if len(username) < 3 or len(username) > 50:
@@ -34,6 +36,10 @@ def register():
         errors["email"] = "Correo inválido."
     if len(password) < 8:
         errors["password"] = "La contraseña debe tener al menos 8 caracteres."
+
+    valid_categories = {c.value for c in ExchangeCategory}
+    if not isinstance(interests, list) or any(i not in valid_categories for i in interests):
+        errors["interests"] = "Selección de intereses inválida."
 
     if errors:
         return jsonify(error="Datos inválidos.", fields=errors), 400
@@ -44,7 +50,7 @@ def register():
     if User.query.filter_by(username=username).first():
         return jsonify(error="El usuario ya existe.", fields={"username": "Ya en uso."}), 409
 
-    user = User(username=username, email=email)
+    user = User(username=username, email=email, city=city, interests=interests)
     user.set_password(password)
 
     db.session.add(user)

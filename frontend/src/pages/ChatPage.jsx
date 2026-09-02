@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
-import { api } from "../api/client";
+import { ArrowLeft, Send } from "lucide-react";
+import { Link, useParams } from "react-router-dom";
+import { api, uploadUrl } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import "./ChatPage.css";
 
@@ -52,7 +53,13 @@ export function ChatPage() {
 
   return (
     <div className="chat-screen">
-      <h1>{otherUser?.username}</h1>
+      <div className="chat-header">
+        <Link to="/conversations" className="icon-btn">
+          <ArrowLeft size={20} />
+        </Link>
+        {otherUser && <img src={uploadUrl(otherUser.avatar)} alt="" className="chat-header-avatar" />}
+        <h2>{otherUser?.username}</h2>
+      </div>
 
       {error && <div className="banner banner-error">{error}</div>}
 
@@ -72,8 +79,8 @@ export function ChatPage() {
           placeholder="Escribe un mensaje…"
           autoFocus
         />
-        <button type="submit" className="btn btn-primary" disabled={sending}>
-          Enviar
+        <button type="submit" className="btn btn-primary btn-icon" disabled={sending} aria-label="Enviar">
+          <Send size={18} />
         </button>
       </form>
     </div>

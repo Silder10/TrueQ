@@ -50,6 +50,7 @@ def _register_blueprints(app):
     from app.blueprints.exchanges import exchanges_bp
     from app.blueprints.favorites import favorites_bp
     from app.blueprints.notifications import notifications_bp
+    from app.blueprints.reviews import reviews_bp
     from app.blueprints.users import users_bp
 
     app.register_blueprint(auth_bp)
@@ -58,6 +59,7 @@ def _register_blueprints(app):
     app.register_blueprint(favorites_bp)
     app.register_blueprint(chat_bp)
     app.register_blueprint(notifications_bp)
+    app.register_blueprint(reviews_bp)
     app.register_blueprint(admin_bp)
 
 

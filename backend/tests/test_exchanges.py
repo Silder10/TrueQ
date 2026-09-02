@@ -5,7 +5,7 @@ def test_create_exchange_persists_form_data(client):
     """
     Este es el test que habría atrapado el bug original: create_exchange()
     hacía db.session.add(Exchange) (la clase, no una instancia) y nunca leía
-    title/description/category del form. Con eso, este test fallaría.
+    los campos del form. Con eso, este test fallaría.
     """
     register_user(client)
 
@@ -13,16 +13,19 @@ def test_create_exchange_persists_form_data(client):
         "/api/exchanges",
         data={
             "title": "Bicicleta usada",
-            "description": "Rodado 26, buen estado",
-            "category": "Deportes",
+            "offers": "Bicicleta rodado 26",
+            "seeks": "Herramientas o algo de jardín",
+            "description": "Buen estado, poco uso",
+            "category": "Bienes",
         },
     )
 
     assert response.status_code == 201
     body = response.get_json()["exchange"]
     assert body["title"] == "Bicicleta usada"
-    assert body["description"] == "Rodado 26, buen estado"
-    assert body["category"] == "Deportes"
+    assert body["offers"] == "Bicicleta rodado 26"
+    assert body["seeks"] == "Herramientas o algo de jardín"
+    assert body["category"] == "Bienes"
     assert body["status"] == "Disponible"
 
     listing = client.get("/api/exchanges").get_json()
@@ -31,19 +34,25 @@ def test_create_exchange_persists_form_data(client):
 
 
 def test_create_exchange_without_image_does_not_crash(client):
-    """
-    El bug original explotaba con AttributeError si no subías imagen,
-    porque llamaba secure_filename(image.filename) con image=None.
-    """
     register_user(client)
 
     response = client.post(
         "/api/exchanges",
-        data={"title": "Libro", "description": "Usado", "category": "Libros"},
+        data={"title": "Libro", "offers": "Libro de cocina", "seeks": "Otro libro", "category": "Bienes"},
     )
 
     assert response.status_code == 201
     assert response.get_json()["exchange"]["image"] == "exchange.png"
+
+
+def test_create_exchange_invalid_category_returns_400(client):
+    register_user(client)
+    response = client.post(
+        "/api/exchanges",
+        data={"title": "Algo", "offers": "x", "seeks": "y", "category": "NoExiste"},
+    )
+    assert response.status_code == 400
+    assert "category" in response.get_json()["fields"]
 
 
 def test_create_exchange_missing_fields_returns_400(client):
@@ -53,24 +62,24 @@ def test_create_exchange_missing_fields_returns_400(client):
     assert "title" in response.get_json()["fields"]
 
 
+def _create_exchange(client, **overrides):
+    data = {"title": "Guitarra", "offers": "Guitarra acústica", "seeks": "Amplificador", "category": "Bienes"}
+    data.update(overrides)
+    return client.post("/api/exchanges", data=data)
+
+
 def test_full_request_accept_flow(client):
-    # Dueño del intercambio
     register_user(client, username="owner", email="owner@example.com")
-    client.post(
-        "/api/exchanges",
-        data={"title": "Guitarra", "description": "Acústica", "category": "Música"},
-    )
+    _create_exchange(client)
     exchange_id = client.get("/api/exchanges").get_json()["items"][0]["id"]
     client.post("/api/auth/logout")
 
-    # Solicitante
     register_user(client, username="requester", email="req@example.com")
     req_response = client.post(f"/api/exchanges/{exchange_id}/request")
     assert req_response.status_code == 201
     request_id = req_response.get_json()["request"]["id"]
     client.post("/api/auth/logout")
 
-    # El dueño acepta
     client.post("/api/auth/login", json={"email": "owner@example.com", "password": "clave1234"})
     accept_response = client.post(f"/api/exchanges/requests/{request_id}/accept")
     assert accept_response.status_code == 200
@@ -79,10 +88,7 @@ def test_full_request_accept_flow(client):
 
 def test_cannot_request_own_exchange(client):
     register_user(client)
-    client.post(
-        "/api/exchanges",
-        data={"title": "Silla", "description": "De madera", "category": "Hogar"},
-    )
+    _create_exchange(client, title="Silla")
     exchange_id = client.get("/api/exchanges").get_json()["items"][0]["id"]
 
     response = client.post(f"/api/exchanges/{exchange_id}/request")
@@ -91,10 +97,7 @@ def test_cannot_request_own_exchange(client):
 
 def test_toggle_favorite(client):
     register_user(client, username="owner", email="owner@example.com")
-    client.post(
-        "/api/exchanges",
-        data={"title": "Mesa", "description": "Ratona", "category": "Hogar"},
-    )
+    _create_exchange(client, title="Mesa")
     exchange_id = client.get("/api/exchanges").get_json()["items"][0]["id"]
     client.post("/api/auth/logout")
 
@@ -105,3 +108,29 @@ def test_toggle_favorite(client):
 
     second = client.post(f"/api/favorites/{exchange_id}")
     assert second.get_json()["favorited"] is False
+
+
+def test_filter_by_category(client):
+    register_user(client)
+    _create_exchange(client, title="Curso de guitarra", category="Servicios")
+    _create_exchange(client, title="Bicicleta", category="Bienes")
+
+    response = client.get("/api/exchanges?category=Servicios")
+    items = response.get_json()["items"]
+    assert len(items) == 1
+    assert items[0]["title"] == "Curso de guitarra"
+
+
+def test_filter_by_owner_id(client):
+    register_user(client, username="owner1", email="owner1@example.com")
+    _create_exchange(client, title="De owner1")
+    owner1_id = client.get("/api/auth/me").get_json()["user"]["id"]
+    client.post("/api/auth/logout")
+
+    register_user(client, username="owner2", email="owner2@example.com")
+    _create_exchange(client, title="De owner2")
+
+    response = client.get(f"/api/exchanges?owner_id={owner1_id}")
+    items = response.get_json()["items"]
+    assert len(items) == 1
+    assert items[0]["title"] == "De owner1"

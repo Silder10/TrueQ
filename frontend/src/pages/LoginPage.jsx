@@ -27,16 +27,15 @@ export function LoginPage() {
 
   return (
     <div className="auth-screen">
-      <div className="auth-brand">
-        <h1>
-          Lo que sobra <em>aquí</em>,
-          <br />
-          hace falta <em>allá</em>.
-        </h1>
-        <p>
-          TRUEQ conecta a gente que quiere intercambiar objetos directamente,
-          sin que la plata tenga que estar en el medio.
-        </p>
+      <div className="auth-visual">
+        <span className="auth-visual-icon">🔄</span>
+        <h1>TrueQ</h1>
+        <p>Intercambia lo que tienes por lo que necesitas. Sin dinero de por medio, sin complicaciones.</p>
+        <ul className="auth-visual-points">
+          <li>🤝 Conecta con tu comunidad</li>
+          <li>🌱 Dale una segunda vida a lo que ya no usas</li>
+          <li>🔒 Chatea y coordina de forma segura</li>
+        </ul>
       </div>
 
       <div className="auth-card">

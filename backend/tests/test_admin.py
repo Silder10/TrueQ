@@ -19,7 +19,7 @@ def test_delete_user_with_related_data_does_not_raise(client, db):
     register_user(client, username="owner", email="owner@example.com")
     client.post(
         "/api/exchanges",
-        data={"title": "Sofá", "description": "3 cuerpos", "category": "Hogar"},
+        data={"title": "Sofá", "offers": "Sofá 3 cuerpos", "seeks": "Comedor", "category": "Bienes"},
     )
     exchange_id = client.get("/api/exchanges").get_json()["items"][0]["id"]
     client.post("/api/auth/logout")

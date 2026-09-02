@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
+import "./ExchangesPage.css";
+
+const INTEREST_OPTIONS = ["Materiales", "Bienes", "Servicios"];
 
 export function SettingsPage() {
   const { user, refreshUser } = useAuth();
@@ -8,6 +11,8 @@ export function SettingsPage() {
     username: user.username,
     email: user.email,
     bio: user.bio || "",
+    city: user.city || "",
+    interests: user.interests || [],
     is_private: user.is_private,
     new_password: "",
   });
@@ -22,6 +27,15 @@ export function SettingsPage() {
       [key]: e.target.type === "checkbox" ? e.target.checked : e.target.value,
     }));
 
+  const toggleInterest = (value) => {
+    setForm((f) => ({
+      ...f,
+      interests: f.interests.includes(value)
+        ? f.interests.filter((i) => i !== value)
+        : [...f.interests, value],
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
@@ -32,6 +46,8 @@ export function SettingsPage() {
     formData.append("username", form.username);
     formData.append("email", form.email);
     formData.append("bio", form.bio);
+    formData.append("city", form.city);
+    formData.append("interests", form.interests.join(","));
     formData.append("is_private", form.is_private ? "true" : "false");
     if (form.new_password) formData.append("new_password", form.new_password);
     if (avatar) formData.append("avatar", avatar);
@@ -64,6 +80,27 @@ export function SettingsPage() {
         <div className="field">
           <label htmlFor="email">Correo</label>
           <input id="email" type="email" value={form.email} onChange={update("email")} />
+        </div>
+
+        <div className="field">
+          <label htmlFor="city">Ciudad</label>
+          <input id="city" value={form.city} onChange={update("city")} placeholder="Ej. Barranquilla" />
+        </div>
+
+        <div className="field">
+          <label>Intereses</label>
+          <div className="category-row">
+            {INTEREST_OPTIONS.map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                className={`chip ${form.interests.includes(opt) ? "chip-active" : ""}`}
+                onClick={() => toggleInterest(opt)}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="field">

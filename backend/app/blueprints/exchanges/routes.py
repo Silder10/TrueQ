@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
 
 from app.extensions import db
-from app.models import Exchange, ExchangeRequest, RequestStatus
+from app.models import Exchange, ExchangeCategory, ExchangeRequest, RequestStatus
 from app.services.notifications import notify
 from app.services.uploads import InvalidImageError, save_image
 from app.utils import paginated_response
@@ -15,13 +15,22 @@ exchanges_bp = Blueprint("exchanges", __name__, url_prefix="/api/exchanges")
 def list_exchanges():
     search = request.args.get("search", "").strip()
     category = request.args.get("category", "").strip()
+    owner_id = request.args.get("owner_id", "").strip()
 
     query = Exchange.query
 
     if search:
         query = query.filter(Exchange.title.ilike(f"%{search}%"))
     if category:
-        query = query.filter_by(category=category)
+        try:
+            category_enum = ExchangeCategory(category)
+            query = query.filter_by(category=category_enum)
+        except ValueError:
+            return jsonify(error="Categoría inválida."), 400
+    if owner_id:
+        if not owner_id.isdigit():
+            return jsonify(error="owner_id inválido."), 400
+        query = query.filter_by(owner_id=int(owner_id))
 
     query = query.order_by(Exchange.created_at.desc())
 
@@ -32,16 +41,27 @@ def list_exchanges():
 @login_required
 def create_exchange():
     title = (request.form.get("title") or "").strip()
+    offers = (request.form.get("offers") or "").strip()
+    seeks = (request.form.get("seeks") or "").strip()
     description = (request.form.get("description") or "").strip()
-    category = (request.form.get("category") or "").strip()
+    category_raw = (request.form.get("category") or "").strip()
 
     errors = {}
     if not title:
         errors["title"] = "El título es obligatorio."
-    if not description:
-        errors["description"] = "La descripción es obligatoria."
-    if not category:
-        errors["category"] = "La categoría es obligatoria."
+    if not offers:
+        errors["offers"] = "Contá qué ofreces."
+    if not seeks:
+        errors["seeks"] = "Contá qué buscas a cambio."
+
+    category_enum = None
+    if not category_raw:
+        errors["category"] = "Elegí un tipo de intercambio."
+    else:
+        try:
+            category_enum = ExchangeCategory(category_raw)
+        except ValueError:
+            errors["category"] = "Tipo de intercambio inválido."
 
     if errors:
         return jsonify(error="Datos inválidos.", fields=errors), 400
@@ -56,8 +76,10 @@ def create_exchange():
 
     exchange = Exchange(
         title=title,
-        description=description,
-        category=category,
+        offers=offers,
+        seeks=seeks,
+        description=description or None,
+        category=category_enum,
         image=filename,
         owner_id=current_user.id,
     )

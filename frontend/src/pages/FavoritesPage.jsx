@@ -19,7 +19,7 @@ export function FavoritesPage() {
   return (
     <div className="stack">
       <div>
-        <h1>Favoritos</h1>
+        <h1>❤️ Mis favoritos</h1>
         <p>Lo que guardaste para más adelante.</p>
       </div>
 
@@ -29,6 +29,7 @@ export function FavoritesPage() {
         <p>Cargando…</p>
       ) : items.length === 0 ? (
         <div className="empty-state">
+          <div className="empty-state-icon">🤍</div>
           <h3>Aún no guardaste nada</h3>
           <p>Marca el corazón en cualquier publicación para verla acá.</p>
         </div>

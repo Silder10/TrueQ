@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
 
 from app.extensions import db
-from app.models import User
+from app.models import ExchangeCategory, User
 from app.services.uploads import InvalidImageError, save_image
 
 users_bp = Blueprint("users", __name__, url_prefix="/api/users")
@@ -25,8 +25,10 @@ def update_settings():
     username = request.form.get("username")
     email = request.form.get("email")
     bio = request.form.get("bio")
+    city = request.form.get("city")
     new_password = request.form.get("new_password")
     is_private = request.form.get("is_private")
+    interests_raw = request.form.get("interests")  # CSV: "Materiales,Bienes"
 
     if username:
         existing = User.query.filter(User.username == username, User.id != current_user.id).first()
@@ -42,6 +44,16 @@ def update_settings():
 
     if bio is not None:
         current_user.bio = bio
+
+    if city is not None:
+        current_user.city = city.strip() or None
+
+    if interests_raw is not None:
+        interests = [i.strip() for i in interests_raw.split(",") if i.strip()]
+        valid_categories = {c.value for c in ExchangeCategory}
+        if any(i not in valid_categories for i in interests):
+            return jsonify(error="Selección de intereses inválida."), 400
+        current_user.interests = interests
 
     if is_private is not None:
         current_user.is_private = is_private == "true"

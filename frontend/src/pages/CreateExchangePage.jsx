@@ -1,12 +1,18 @@
 import { useState } from "react";
+import { ImagePlus, Package, Wrench, Boxes } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
+import "./CreateExchangePage.css";
 
-const CATEGORIES = ["Hogar", "Deportes", "Música", "Libros", "Ropa", "Tecnología"];
+const CATEGORIES = [
+  { value: "Materiales", icon: Boxes, desc: "Insumos, sobrantes, telas…" },
+  { value: "Bienes", icon: Package, desc: "Objetos, ropa, tecnología…" },
+  { value: "Servicios", icon: Wrench, desc: "Clases, reparaciones…" },
+];
 
 export function CreateExchangePage() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ title: "", description: "", category: CATEGORIES[0] });
+  const [form, setForm] = useState({ category: "", title: "", offers: "", seeks: "", description: "" });
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState(null);
@@ -29,6 +35,8 @@ export function CreateExchangePage() {
 
     const formData = new FormData();
     formData.append("title", form.title);
+    formData.append("offers", form.offers);
+    formData.append("seeks", form.seeks);
     formData.append("description", form.description);
     formData.append("category", form.category);
     if (image) formData.append("image", image);
@@ -45,59 +53,85 @@ export function CreateExchangePage() {
   };
 
   return (
-    <div className="stack" style={{ maxWidth: 560 }}>
+    <div className="stack create-exchange" style={{ maxWidth: 640 }}>
       <div>
         <h1>Publicar algo para intercambiar</h1>
-        <p>Cuéntale a la comunidad qué tienes y qué buscas a cambio en la descripción.</p>
+        <p>Contale a la comunidad qué tienes y qué buscas a cambio.</p>
       </div>
 
       {error && <div className="banner banner-error">{error}</div>}
 
       <form onSubmit={handleSubmit} className="stack">
-        <div className="field">
-          <label htmlFor="title">Título</label>
-          <input id="title" value={form.title} onChange={update("title")} required maxLength={120} />
-          {fieldErrors.title && <div className="field-error">{fieldErrors.title}</div>}
-        </div>
-
-        <div className="field">
-          <label htmlFor="category">Categoría</label>
-          <select id="category" value={form.category} onChange={update("category")}>
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
+        <section className="form-section">
+          <h2 className="form-section-title">¿Qué tipo de intercambio es?</h2>
+          <div className="type-grid">
+            {CATEGORIES.map(({ value, icon: Icon, desc }) => (
+              <button
+                type="button"
+                key={value}
+                className={`type-card ${form.category === value ? "type-card-active" : ""}`}
+                onClick={() => setForm((f) => ({ ...f, category: value }))}
+              >
+                <Icon size={22} />
+                <strong>{value}</strong>
+                <span>{desc}</span>
+              </button>
             ))}
-          </select>
-        </div>
+          </div>
+          {fieldErrors.category && <div className="field-error">{fieldErrors.category}</div>}
+        </section>
 
-        <div className="field">
-          <label htmlFor="description">Descripción</label>
-          <textarea
-            id="description"
-            rows={5}
-            value={form.description}
-            onChange={update("description")}
-            required
-            placeholder="Estado del objeto, qué buscas a cambio, disponibilidad…"
-          />
-          {fieldErrors.description && <div className="field-error">{fieldErrors.description}</div>}
-        </div>
-
-        <div className="field">
-          <label htmlFor="image">Foto (opcional)</label>
-          <input id="image" type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={handleImageChange} />
-          {preview && (
-            <img
-              src={preview}
-              alt="Vista previa"
-              style={{ marginTop: "0.6rem", width: 140, height: 140, objectFit: "cover", border: "1px solid var(--line)" }}
+        <section className="form-section">
+          <h2 className="form-section-title">Información</h2>
+          <div className="field">
+            <label htmlFor="title">Título</label>
+            <input id="title" value={form.title} onChange={update("title")} required maxLength={120} />
+            {fieldErrors.title && <div className="field-error">{fieldErrors.title}</div>}
+          </div>
+          <div className="field">
+            <label htmlFor="offers">¿Qué ofreces?</label>
+            <input id="offers" value={form.offers} onChange={update("offers")} placeholder="Ej. Bicicleta rodado 26" />
+            {fieldErrors.offers && <div className="field-error">{fieldErrors.offers}</div>}
+          </div>
+          <div className="field">
+            <label htmlFor="seeks">¿Qué buscas a cambio?</label>
+            <input id="seeks" value={form.seeks} onChange={update("seeks")} placeholder="Ej. Herramientas o algo de jardín" />
+            {fieldErrors.seeks && <div className="field-error">{fieldErrors.seeks}</div>}
+          </div>
+          <div className="field">
+            <label htmlFor="description">Descripción (opcional)</label>
+            <textarea
+              id="description"
+              rows={4}
+              value={form.description}
+              onChange={update("description")}
+              placeholder="Estado del objeto, disponibilidad, detalles extra…"
             />
-          )}
-        </div>
+          </div>
+        </section>
 
-        <button type="submit" className="btn btn-primary" disabled={submitting}>
-          {submitting ? <span className="spinner" /> : "Publicar"}
+        <section className="form-section">
+          <h2 className="form-section-title">Imagen</h2>
+          <label className="image-drop">
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              onChange={handleImageChange}
+              hidden
+            />
+            {preview ? (
+              <img src={preview} alt="Vista previa" className="image-drop-preview" />
+            ) : (
+              <>
+                <ImagePlus size={28} />
+                <span>Agregar imagen</span>
+              </>
+            )}
+          </label>
+        </section>
+
+        <button type="submit" className="btn btn-primary btn-full" disabled={submitting}>
+          {submitting ? <span className="spinner" /> : "Publicar intercambio"}
         </button>
       </form>
     </div>

@@ -47,3 +47,34 @@ def test_me_without_session_returns_null_user(client):
     response = client.get("/api/auth/me")
     assert response.status_code == 200
     assert response.get_json()["user"] is None
+
+
+def test_register_with_city_and_interests(client):
+    response = client.post(
+        "/api/auth/register",
+        json={
+            "username": "ana",
+            "email": "ana@example.com",
+            "password": "clave1234",
+            "city": "Barranquilla",
+            "interests": ["Bienes", "Servicios"],
+        },
+    )
+    assert response.status_code == 201
+    body = response.get_json()["user"]
+    assert body["city"] == "Barranquilla"
+    assert body["interests"] == ["Bienes", "Servicios"]
+
+
+def test_register_rejects_invalid_interest(client):
+    response = client.post(
+        "/api/auth/register",
+        json={
+            "username": "ana",
+            "email": "ana@example.com",
+            "password": "clave1234",
+            "interests": ["NoExiste"],
+        },
+    )
+    assert response.status_code == 400
+    assert "interests" in response.get_json()["fields"]

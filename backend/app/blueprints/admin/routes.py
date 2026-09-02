@@ -4,7 +4,7 @@ from flask import Blueprint, current_app, jsonify
 from flask_login import current_user, login_required
 
 from app.extensions import db
-from app.models import Exchange, Message, Notification, User
+from app.models import Exchange, Message, Notification, Review, User
 from app.utils import admin_required, paginated_response
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/api/admin")
@@ -19,6 +19,8 @@ def dashboard():
         exchanges_count=Exchange.query.count(),
         messages_count=Message.query.count(),
         notifications_count=Notification.query.count(),
+        reviews_count=Review.query.count(),
+        completed_exchanges_count=Exchange.query.filter_by(status="Completado").count(),
     )
 
 

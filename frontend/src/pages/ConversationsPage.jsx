@@ -29,15 +29,19 @@ export function ConversationsPage() {
         <p>Cargando…</p>
       ) : items.length === 0 ? (
         <div className="empty-state">
+          <div className="empty-state-icon">💬</div>
           <h3>Sin conversaciones todavía</h3>
           <p>Escríbele al dueño de una publicación para empezar.</p>
         </div>
       ) : (
-        <div className="stack">
+        <div className="stack" style={{ gap: "6px" }}>
           {items.map((u) => (
             <Link key={u.id} to={`/chat/${u.id}`} className="conversation-row">
               <img src={uploadUrl(u.avatar)} alt="" className="conversation-avatar" />
-              <span>{u.username}</span>
+              <div>
+                <strong>{u.username}</strong>
+                <span>Toca para ver la conversación</span>
+              </div>
             </Link>
           ))}
         </div>
