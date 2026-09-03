@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { LocateFixed } from "lucide-react";
 import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
+import { detectLocation } from "../utils/geolocation";
 import "./ExchangesPage.css";
 
 const INTEREST_OPTIONS = ["Materiales", "Bienes", "Servicios"];
@@ -16,10 +18,26 @@ export function SettingsPage() {
     is_private: user.is_private,
     new_password: "",
   });
+  const [coords, setCoords] = useState({ latitude: user.latitude, longitude: user.longitude });
+  const [locating, setLocating] = useState(false);
   const [avatar, setAvatar] = useState(null);
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
+
+  const handleDetectLocation = async () => {
+    setLocating(true);
+    setError(null);
+    try {
+      const { latitude, longitude, city } = await detectLocation();
+      setCoords({ latitude, longitude });
+      setForm((f) => ({ ...f, city: city || f.city }));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLocating(false);
+    }
+  };
 
   const update = (key) => (e) =>
     setForm((f) => ({
@@ -47,6 +65,8 @@ export function SettingsPage() {
     formData.append("email", form.email);
     formData.append("bio", form.bio);
     formData.append("city", form.city);
+    if (coords.latitude != null) formData.append("latitude", coords.latitude);
+    if (coords.longitude != null) formData.append("longitude", coords.longitude);
     formData.append("interests", form.interests.join(","));
     formData.append("is_private", form.is_private ? "true" : "false");
     if (form.new_password) formData.append("new_password", form.new_password);
@@ -85,6 +105,10 @@ export function SettingsPage() {
         <div className="field">
           <label htmlFor="city">Ciudad</label>
           <input id="city" value={form.city} onChange={update("city")} placeholder="Ej. Barranquilla" />
+          <button type="button" className="btn btn-outline" style={{ marginTop: "0.5rem" }} onClick={handleDetectLocation} disabled={locating}>
+            {locating ? <span className="spinner" /> : <><LocateFixed size={16} /> Actualizar con mi ubicación actual</>}
+          </button>
+          {coords.latitude != null && <div className="field-hint">📍 Ubicación guardada.</div>}
         </div>
 
         <div className="field">

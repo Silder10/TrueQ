@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Package, Search, Wrench, Boxes } from "lucide-react";
+import { Package, Search, Wrench, Boxes, MapPin } from "lucide-react";
 import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { ExchangeCard } from "../components/ExchangeCard";
@@ -16,6 +16,7 @@ export function ExchangesPage() {
   const [items, setItems] = useState([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
+  const [nearby, setNearby] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -23,6 +24,7 @@ export function ExchangesPage() {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
     if (category) params.set("category", category);
+    if (nearby) params.set("nearby", "true");
 
     setLoading(true);
     const timeout = setTimeout(() => {
@@ -34,7 +36,7 @@ export function ExchangesPage() {
     }, 250);
 
     return () => clearTimeout(timeout);
-  }, [search, category]);
+  }, [search, category, nearby]);
 
   return (
     <div className="stack">
@@ -69,6 +71,9 @@ export function ExchangesPage() {
             <Icon size={15} /> {value}
           </button>
         ))}
+        <button className={`chip ${nearby ? "chip-active" : ""}`} onClick={() => setNearby((v) => !v)}>
+          <MapPin size={15} /> Cerca de mí
+        </button>
       </div>
 
       {error && <div className="banner banner-error">{error}</div>}

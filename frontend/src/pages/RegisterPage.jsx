@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { LocateFixed } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { detectLocation } from "../utils/geolocation";
 import "./AuthPage.css";
 
 const INTEREST_OPTIONS = [
@@ -22,10 +24,14 @@ export function RegisterPage() {
     password: "",
     interests: [],
     city: "",
+    latitude: null,
+    longitude: null,
   });
   const [error, setError] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState(null);
 
   const update = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
@@ -47,12 +53,25 @@ export function RegisterPage() {
   const next = () => setStep((s) => Math.min(s + 1, TOTAL_STEPS));
   const back = () => setStep((s) => Math.max(s - 1, 1));
 
+  const handleDetectLocation = async () => {
+    setLocating(true);
+    setLocationError(null);
+    try {
+      const { latitude, longitude, city } = await detectLocation();
+      setForm((f) => ({ ...f, latitude, longitude, city: city || f.city }));
+    } catch (err) {
+      setLocationError(err.message);
+    } finally {
+      setLocating(false);
+    }
+  };
+
   const handleSubmit = async () => {
     setError(null);
     setFieldErrors({});
     setSubmitting(true);
     try {
-      await register(form.username, form.email, form.password, form.interests, form.city);
+      await register(form.username, form.email, form.password, form.interests, form.city, form.latitude, form.longitude);
       navigate("/exchanges");
     } catch (err) {
       setError(err.message);
@@ -145,6 +164,13 @@ export function RegisterPage() {
         {step === 4 && (
           <div className="stack">
             <h2>¿Dónde estás?</h2>
+            <button type="button" className="btn btn-outline btn-full" onClick={handleDetectLocation} disabled={locating}>
+              {locating ? <span className="spinner" /> : <><LocateFixed size={17} /> Usar mi ubicación actual</>}
+            </button>
+            {locationError && <div className="field-error">{locationError}</div>}
+            {form.latitude && (
+              <div className="field-hint">📍 Ubicación detectada correctamente.</div>
+            )}
             <div className="field">
               <label htmlFor="city">Ciudad</label>
               <input
@@ -153,7 +179,9 @@ export function RegisterPage() {
                 onChange={update("city")}
                 placeholder="Ej. Barranquilla"
               />
-              <div className="field-hint">Ayuda a mostrarte intercambios cerca tuyo.</div>
+              <div className="field-hint">
+                También podés escribirla a mano si preferís no compartir tu ubicación.
+              </div>
             </div>
           </div>
         )}

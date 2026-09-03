@@ -68,3 +68,14 @@
   border: 1.5px solid var(--border);
   border-radius: var(--radius-pill);
 }
+
+@media (max-width: 560px) {
+  .chat-screen {
+    height: calc(100vh - 200px);
+    border-radius: var(--radius-md);
+  }
+
+  .chat-bubble {
+    max-width: 85%;
+  }
+}

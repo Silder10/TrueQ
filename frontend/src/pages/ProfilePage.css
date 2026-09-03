@@ -79,3 +79,18 @@
   color: var(--warning);
   letter-spacing: 1px;
 }
+
+@media (max-width: 480px) {
+  .profile-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .profile-meta {
+    justify-content: center;
+  }
+
+  .profile-tabs {
+    overflow-x: auto;
+  }
+}

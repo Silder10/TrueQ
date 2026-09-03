@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Bell,
   Heart,
@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { uploadUrl } from "../api/client";
+import { api, uploadUrl } from "../api/client";
 import "./AppLayout.css";
 
 const PRIMARY_LINKS = [
@@ -27,6 +27,7 @@ const PRIMARY_LINKS = [
 const SECONDARY_LINKS = [
   { to: "/favorites", label: "Favoritos", icon: Heart },
   { to: "/requests", label: "Solicitudes", icon: Bell },
+  { to: "/notifications", label: "Notificaciones", icon: Bell },
   { to: "/settings", label: "Configuración", icon: Settings },
 ];
 
@@ -34,6 +35,17 @@ export function AppLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchCount = () => {
+      api.get("/api/notifications/unread-count").then((data) => setUnreadCount(data.count)).catch(() => {});
+    };
+    fetchCount();
+    const interval = setInterval(fetchCount, 20000); // cada 20s, sin websockets todavía
+    return () => clearInterval(interval);
+  }, [user]);
 
   const handleLogout = async () => {
     await logout();
@@ -55,8 +67,11 @@ export function AppLayout() {
               </div>
 
               <div className="app-header-actions">
-                <NavLink to="/requests" className="icon-btn" aria-label="Notificaciones">
+                <NavLink to="/notifications" className="icon-btn notification-bell" aria-label="Notificaciones">
                   <Bell size={20} />
+                  {unreadCount > 0 && (
+                    <span className="notification-badge">{unreadCount > 9 ? "9+" : unreadCount}</span>
+                  )}
                 </NavLink>
                 <NavLink to={`/profile/${user.id}`} className="avatar-link">
                   <img src={uploadUrl(user.avatar)} alt="" className="avatar-thumb" />

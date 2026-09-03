@@ -24,8 +24,12 @@ class User(UserMixin, db.Model):
     is_private = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Ubicación por ciudad (no GPS/distancia real, ver nota de alcance).
+    # Ubicación por ciudad + coordenadas reales (capturadas con
+    # navigator.geolocation en el navegador). city queda como nombre legible;
+    # lat/lng habilitan el cálculo de distancia real entre usuarios.
     city = db.Column(db.String(120))
+    latitude = db.Column(db.Float)
+    longitude = db.Column(db.Float)
 
     # Intereses elegidos en el registro por pasos: lista de categorías
     # (Materiales/Bienes/Servicios), guardada como JSON.
@@ -71,6 +75,8 @@ class User(UserMixin, db.Model):
             "role": self.role,
             "is_private": self.is_private,
             "city": self.city,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
             "interests": self.interests or [],
             "average_rating": self.average_rating,
             "reviews_count": self.reviews_count,

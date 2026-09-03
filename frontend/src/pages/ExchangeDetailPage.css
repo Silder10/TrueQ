@@ -112,3 +112,32 @@
     grid-template-columns: 1fr;
   }
 }
+
+.review-form {
+  margin-top: var(--space-4);
+  max-width: 480px;
+}
+
+.review-form textarea {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  margin: var(--space-2) 0;
+  font-family: inherit;
+}
+
+.star-picker {
+  display: flex;
+  gap: 4px;
+  color: var(--warning);
+}
+
+.star-picker-btn {
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  color: inherit;
+  display: flex;
+}

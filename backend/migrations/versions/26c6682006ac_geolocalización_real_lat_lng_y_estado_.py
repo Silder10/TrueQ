@@ -1,8 +1,8 @@
-"""Esquema inicial con reseñas, ciudad, intereses y categorías tipo
+"""Geolocalización real (lat/lng) y estado completado
 
-Revision ID: 8e0f0340c9e3
+Revision ID: 26c6682006ac
 Revises: 
-Create Date: 2026-09-02 05:14:01.490588
+Create Date: 2026-09-02 19:32:42.796717
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '8e0f0340c9e3'
+revision = '26c6682006ac'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -29,6 +29,8 @@ def upgrade():
     sa.Column('is_private', sa.Boolean(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('city', sa.String(length=120), nullable=True),
+    sa.Column('latitude', sa.Float(), nullable=True),
+    sa.Column('longitude', sa.Float(), nullable=True),
     sa.Column('interests', sa.JSON(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email'),

@@ -3,11 +3,22 @@ from flask_login import current_user, login_required
 
 from app.extensions import db
 from app.models import Exchange, ExchangeCategory, ExchangeRequest, RequestStatus
+from app.services.geolocation import distance_km
 from app.services.notifications import notify
 from app.services.uploads import InvalidImageError, save_image
 from app.utils import paginated_response
 
 exchanges_bp = Blueprint("exchanges", __name__, url_prefix="/api/exchanges")
+
+
+def _exchange_with_distance(exchange):
+    data = exchange.to_dict()
+    if current_user.is_authenticated and exchange.owner:
+        data["distance_km"] = distance_km(
+            current_user.latitude, current_user.longitude,
+            exchange.owner.latitude, exchange.owner.longitude,
+        )
+    return data
 
 
 @exchanges_bp.get("")
@@ -16,6 +27,7 @@ def list_exchanges():
     search = request.args.get("search", "").strip()
     category = request.args.get("category", "").strip()
     owner_id = request.args.get("owner_id", "").strip()
+    nearby = request.args.get("nearby", "").strip() == "true"
 
     query = Exchange.query
 
@@ -34,7 +46,20 @@ def list_exchanges():
 
     query = query.order_by(Exchange.created_at.desc())
 
-    return paginated_response(query, lambda e: e.to_dict())
+    if nearby and current_user.latitude is not None:
+        # "Cerca de mí" no se puede ordenar en SQL sin extensiones geoespaciales,
+        # así que la ordenamos en memoria tras traer la página. Aceptable para
+        # el volumen de datos de este proyecto; si crece mucho, se movería a
+        # una columna geoespacial indexada (PostGIS/MySQL ST_Distance).
+        all_items = query.all()
+        with_distance = [(_exchange_with_distance(e), e) for e in all_items]
+        with_distance.sort(
+            key=lambda pair: pair[0]["distance_km"] if pair[0]["distance_km"] is not None else float("inf")
+        )
+        items = [d for d, _ in with_distance]
+        return jsonify(items=items, total=len(items), page=1, pages=1, has_next=False, has_prev=False)
+
+    return paginated_response(query, _exchange_with_distance)
 
 
 @exchanges_bp.post("")
@@ -93,7 +118,7 @@ def create_exchange():
 @login_required
 def get_exchange(exchange_id):
     exchange = Exchange.query.get_or_404(exchange_id)
-    return jsonify(exchange=exchange.to_dict())
+    return jsonify(exchange=_exchange_with_distance(exchange))
 
 
 @exchanges_bp.post("/<int:exchange_id>/request")
@@ -158,3 +183,19 @@ def accept_request(request_id):
 @login_required
 def reject_request(request_id):
     return _resolve_request(request_id, RequestStatus.RECHAZADA, "rechazada")
+
+
+@exchanges_bp.post("/<int:exchange_id>/complete")
+@login_required
+def complete_exchange(exchange_id):
+    from app.models import ExchangeStatus
+
+    exchange = Exchange.query.get_or_404(exchange_id)
+
+    if exchange.owner_id != current_user.id:
+        return jsonify(error="Solo el dueño puede marcar el intercambio como completado."), 403
+
+    exchange.status = ExchangeStatus.COMPLETADO
+    db.session.commit()
+
+    return jsonify(exchange=exchange.to_dict())

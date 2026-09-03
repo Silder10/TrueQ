@@ -15,6 +15,7 @@ import { ChatPage } from "./pages/ChatPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { AdminPage } from "./pages/AdminPage";
+import { NotificationsPage } from "./pages/NotificationsPage";
 
 function RedirectIfAuthed({ children }) {
   const { user, loading } = useAuth();
@@ -49,6 +50,7 @@ function AppRoutes() {
           <Route path="/exchanges/:id" element={<ExchangeDetailPage />} />
           <Route path="/create-exchange" element={<CreateExchangePage />} />
           <Route path="/requests" element={<RequestsPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/conversations" element={<ConversationsPage />} />
           <Route path="/chat/:userId" element={<ChatPage />} />

@@ -30,3 +30,9 @@
   border-radius: 50%;
   object-fit: cover;
 }
+
+@media (max-width: 480px) {
+  .conversation-row {
+    padding: var(--space-2);
+  }
+}

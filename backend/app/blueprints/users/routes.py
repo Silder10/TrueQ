@@ -26,6 +26,8 @@ def update_settings():
     email = request.form.get("email")
     bio = request.form.get("bio")
     city = request.form.get("city")
+    latitude = request.form.get("latitude")
+    longitude = request.form.get("longitude")
     new_password = request.form.get("new_password")
     is_private = request.form.get("is_private")
     interests_raw = request.form.get("interests")  # CSV: "Materiales,Bienes"
@@ -47,6 +49,13 @@ def update_settings():
 
     if city is not None:
         current_user.city = city.strip() or None
+
+    if latitude is not None and longitude is not None:
+        try:
+            current_user.latitude = float(latitude) if latitude else None
+            current_user.longitude = float(longitude) if longitude else None
+        except ValueError:
+            return jsonify(error="Coordenadas inválidas."), 400
 
     if interests_raw is not None:
         interests = [i.strip() for i in interests_raw.split(",") if i.strip()]

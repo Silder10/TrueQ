@@ -96,3 +96,13 @@
 .admin-menu-danger {
   color: var(--danger) !important;
 }
+
+@media (max-width: 560px) {
+  .admin-table-row {
+    flex-wrap: wrap;
+  }
+
+  .admin-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

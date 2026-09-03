@@ -27,6 +27,8 @@ def register():
     email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
     city = (data.get("city") or "").strip() or None
+    latitude = data.get("latitude")
+    longitude = data.get("longitude")
     interests = data.get("interests") or []
 
     errors = {}
@@ -50,7 +52,11 @@ def register():
     if User.query.filter_by(username=username).first():
         return jsonify(error="El usuario ya existe.", fields={"username": "Ya en uso."}), 409
 
-    user = User(username=username, email=email, city=city, interests=interests)
+    user = User(
+        username=username, email=email, city=city, interests=interests,
+        latitude=latitude if isinstance(latitude, (int, float)) else None,
+        longitude=longitude if isinstance(longitude, (int, float)) else None,
+    )
     user.set_password(password)
 
     db.session.add(user)

@@ -134,3 +134,53 @@ def test_filter_by_owner_id(client):
     items = response.get_json()["items"]
     assert len(items) == 1
     assert items[0]["title"] == "De owner1"
+
+
+def test_distance_km_appears_when_both_have_coordinates(client):
+    register_user(client, username="owner", email="owner@example.com")
+    client.put(
+        "/api/users/me",
+        data={"latitude": "10.9639", "longitude": "-74.7964"},  # Barranquilla
+    )
+    _create_exchange(client, title="Con ubicación")
+    client.post("/api/auth/logout")
+
+    register_user(client, username="viewer", email="viewer@example.com")
+    client.put(
+        "/api/users/me",
+        data={"latitude": "4.7110", "longitude": "-74.0721"},  # Bogotá
+    )
+
+    response = client.get("/api/exchanges")
+    item = response.get_json()["items"][0]
+    assert item["distance_km"] is not None
+    assert 690 < item["distance_km"] < 720  # distancia real Barranquilla-Bogotá
+
+
+def test_distance_km_is_null_without_coordinates(client):
+    register_user(client)
+    _create_exchange(client, title="Sin ubicación")
+
+    response = client.get("/api/exchanges")
+    assert response.get_json()["items"][0]["distance_km"] is None
+
+
+def test_owner_can_complete_exchange(client):
+    register_user(client)
+    _create_exchange(client, title="Para completar")
+    exchange_id = client.get("/api/exchanges").get_json()["items"][0]["id"]
+
+    response = client.post(f"/api/exchanges/{exchange_id}/complete")
+    assert response.status_code == 200
+    assert response.get_json()["exchange"]["status"] == "Completado"
+
+
+def test_non_owner_cannot_complete_exchange(client):
+    register_user(client, username="owner", email="owner@example.com")
+    _create_exchange(client, title="Ajeno")
+    exchange_id = client.get("/api/exchanges").get_json()["items"][0]["id"]
+    client.post("/api/auth/logout")
+
+    register_user(client, username="stranger", email="stranger@example.com")
+    response = client.post(f"/api/exchanges/{exchange_id}/complete")
+    assert response.status_code == 403

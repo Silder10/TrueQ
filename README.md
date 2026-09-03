@@ -107,6 +107,19 @@ mysql -u root -e "DROP DATABASE trueq_db; CREATE DATABASE trueq_db CHARACTER SET
 flask db upgrade
 ```
 
+## Geolocalización real
+
+La ubicación se captura con `navigator.geolocation` del navegador (botón "Usar
+mi ubicación actual" en el registro y en Ajustes) y se traduce a un nombre de
+ciudad legible con [Nominatim](https://nominatim.org) (OpenStreetMap, gratis,
+sin API key). La distancia entre usuarios se calcula en el backend con la
+fórmula de Haversine (`backend/app/services/geolocation.py`) — sin depender de
+ningún servicio externo para eso. El botón "Cerca de mí" en Explorar ordena
+por esa distancia.
+
+Si el usuario no da permiso de ubicación, puede escribir su ciudad a mano; en
+ese caso no hay distancia en km, solo el nombre de la ciudad.
+
 ## Pendiente / próximos pasos sugeridos
 
 - Rate limiting en `/api/auth/login` (Flask-Limiter).

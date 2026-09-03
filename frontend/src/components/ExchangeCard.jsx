@@ -62,10 +62,16 @@ export function ExchangeCard({ exchange, showFavorite = true }) {
         </div>
 
         <div className="exchange-card-footer">
-          {exchange.owner?.city && (
+          {exchange.distance_km != null ? (
             <span className="exchange-card-meta">
-              <MapPin size={13} /> {exchange.owner.city}
+              <MapPin size={13} /> A {exchange.distance_km} km de ti
             </span>
+          ) : (
+            exchange.owner?.city && (
+              <span className="exchange-card-meta">
+                <MapPin size={13} /> {exchange.owner.city}
+              </span>
+            )
           )}
           {exchange.owner && <span className="exchange-card-meta">👤 {exchange.owner.username}</span>}
         </div>
