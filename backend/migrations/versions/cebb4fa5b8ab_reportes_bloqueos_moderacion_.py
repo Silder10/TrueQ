@@ -1,8 +1,8 @@
-"""Geolocalización real (lat/lng) y estado completado
+"""Reportes, bloqueos, moderacion, recuperacion de password, chat con imagenes
 
-Revision ID: 26c6682006ac
+Revision ID: cebb4fa5b8ab
 Revises: 
-Create Date: 2026-09-02 19:32:42.796717
+Create Date: 2026-09-07 20:12:25.086850
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '26c6682006ac'
+revision = 'cebb4fa5b8ab'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -27,7 +27,10 @@ def upgrade():
     sa.Column('avatar', sa.String(length=255), nullable=True),
     sa.Column('bio', sa.Text(), nullable=True),
     sa.Column('is_private', sa.Boolean(), nullable=False),
+    sa.Column('is_suspended', sa.Boolean(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.Column('reset_token_hash', sa.String(length=255), nullable=True),
+    sa.Column('reset_token_expires', sa.DateTime(), nullable=True),
     sa.Column('city', sa.String(length=120), nullable=True),
     sa.Column('latitude', sa.Float(), nullable=True),
     sa.Column('longitude', sa.Float(), nullable=True),
@@ -35,6 +38,16 @@ def upgrade():
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email'),
     sa.UniqueConstraint('username')
+    )
+    op.create_table('blocks',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('blocker_id', sa.Integer(), nullable=False),
+    sa.Column('blocked_id', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['blocked_id'], ['users.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['blocker_id'], ['users.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('blocker_id', 'blocked_id', name='uq_block_pair')
     )
     op.create_table('exchanges',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -45,6 +58,8 @@ def upgrade():
     sa.Column('category', sa.Enum('Materiales', 'Bienes', 'Servicios', name='exchangecategory'), nullable=False),
     sa.Column('image', sa.String(length=255), nullable=True),
     sa.Column('status', sa.Enum('Disponible', 'En proceso', 'Completado', 'Cancelado', name='exchangestatus'), nullable=False),
+    sa.Column('moderation_status', sa.Enum('Pendiente', 'Aprobado', 'Rechazado', name='moderationstatus'), nullable=False),
+    sa.Column('moderation_note', sa.String(length=255), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('owner_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['owner_id'], ['users.id'], ondelete='CASCADE'),
@@ -54,11 +69,22 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('sender_id', sa.Integer(), nullable=False),
     sa.Column('receiver_id', sa.Integer(), nullable=False),
-    sa.Column('content', sa.Text(), nullable=False),
+    sa.Column('content', sa.Text(), nullable=True),
+    sa.Column('image', sa.String(length=255), nullable=True),
     sa.Column('timestamp', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['receiver_id'], ['users.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['sender_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('muted_conversations',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('other_user_id', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['other_user_id'], ['users.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('user_id', 'other_user_id', name='uq_mute_pair')
     )
     op.create_table('notifications',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -67,6 +93,20 @@ def upgrade():
     sa.Column('is_read', sa.Boolean(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('reports',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('reporter_id', sa.Integer(), nullable=False),
+    sa.Column('target_type', sa.Enum('usuario', 'publicacion', name='reporttargettype'), nullable=False),
+    sa.Column('target_id', sa.Integer(), nullable=False),
+    sa.Column('reason', sa.Enum('Acoso', 'Spam', 'Fraude', 'Perfil falso', 'No cumplió con su parte', 'Otro', name='reportreason'), nullable=False),
+    sa.Column('description', sa.Text(), nullable=True),
+    sa.Column('status', sa.Enum('Pendiente', 'Revisado', name='reportstatus'), nullable=False),
+    sa.Column('admin_action', sa.String(length=255), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.Column('resolved_at', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['reporter_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('exchange_requests',
@@ -110,8 +150,11 @@ def downgrade():
     op.drop_table('reviews')
     op.drop_table('favorites')
     op.drop_table('exchange_requests')
+    op.drop_table('reports')
     op.drop_table('notifications')
+    op.drop_table('muted_conversations')
     op.drop_table('messages')
     op.drop_table('exchanges')
+    op.drop_table('blocks')
     op.drop_table('users')
     # ### end Alembic commands ###

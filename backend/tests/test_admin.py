@@ -1,4 +1,4 @@
-from app.models import User
+from app.models import Exchange, ModerationStatus, User
 from tests.conftest import register_user
 
 
@@ -17,11 +17,14 @@ def test_delete_user_with_related_data_does_not_raise(client, db):
     funciona limpio.
     """
     register_user(client, username="owner", email="owner@example.com")
-    client.post(
+    create = client.post(
         "/api/exchanges",
         data={"title": "Sofá", "offers": "Sofá 3 cuerpos", "seeks": "Comedor", "category": "Bienes"},
     )
-    exchange_id = client.get("/api/exchanges").get_json()["items"][0]["id"]
+    exchange_id = create.get_json()["exchange"]["id"]
+    exchange = db.session.get(Exchange, exchange_id)
+    exchange.moderation_status = ModerationStatus.APROBADO
+    db.session.commit()
     client.post("/api/auth/logout")
 
     register_user(client, username="buyer", email="buyer@example.com")
@@ -59,3 +62,54 @@ def test_admin_can_promote_user(client, db):
     response = client.post(f"/api/admin/users/{other.id}/make-admin")
     assert response.status_code == 200
     assert response.get_json()["user"]["role"] == "admin"
+
+
+def test_admin_can_approve_pending_exchange(client, db):
+    register_user(client, username="owner", email="owner@example.com")
+    create = client.post(
+        "/api/exchanges",
+        data={"title": "Pendiente", "offers": "x", "seeks": "y", "category": "Bienes"},
+    )
+    exchange_id = create.get_json()["exchange"]["id"]
+    client.post("/api/auth/logout")
+
+    register_user(client, username="root", email="root@example.com")
+    _make_admin(db, "root@example.com")
+    client.post("/api/auth/logout")
+    client.post("/api/auth/login", json={"email": "root@example.com", "password": "clave1234"})
+
+    response = client.post(f"/api/admin/exchanges/{exchange_id}/approve")
+    assert response.status_code == 200
+    assert response.get_json()["exchange"]["moderation_status"] == "Aprobado"
+
+
+def test_admin_can_reject_pending_exchange_with_note(client, db):
+    register_user(client, username="owner", email="owner@example.com")
+    create = client.post(
+        "/api/exchanges",
+        data={"title": "Sospechosa", "offers": "x", "seeks": "y", "category": "Bienes"},
+    )
+    exchange_id = create.get_json()["exchange"]["id"]
+    client.post("/api/auth/logout")
+
+    register_user(client, username="root", email="root@example.com")
+    _make_admin(db, "root@example.com")
+    client.post("/api/auth/logout")
+    client.post("/api/auth/login", json={"email": "root@example.com", "password": "clave1234"})
+
+    response = client.post(f"/api/admin/exchanges/{exchange_id}/reject", json={"note": "Contenido duplicado"})
+    assert response.status_code == 200
+    body = response.get_json()["exchange"]
+    assert body["moderation_status"] == "Rechazado"
+    assert body["moderation_note"] == "Contenido duplicado"
+
+
+def test_suspended_user_cannot_login(client, db):
+    register_user(client, username="bad", email="bad@example.com")
+    user = User.query.filter_by(email="bad@example.com").first()
+    user.is_suspended = True
+    db.session.commit()
+    client.post("/api/auth/logout")
+
+    response = client.post("/api/auth/login", json={"email": "bad@example.com", "password": "clave1234"})
+    assert response.status_code == 403

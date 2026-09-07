@@ -22,7 +22,13 @@ class User(UserMixin, db.Model):
     avatar = db.Column(db.String(255), default="default.png")
     bio = db.Column(db.Text)
     is_private = db.Column(db.Boolean, default=False, nullable=False)
+    is_suspended = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # RF03: recuperación de contraseña. Guardamos el HASH del token, nunca
+    # el token en claro (igual criterio que la contraseña), con expiración.
+    reset_token_hash = db.Column(db.String(255))
+    reset_token_expires = db.Column(db.DateTime)
 
     # Ubicación por ciudad + coordenadas reales (capturadas con
     # navigator.geolocation en el navegador). city queda como nombre legible;
@@ -55,6 +61,21 @@ class User(UserMixin, db.Model):
     def is_admin(self):
         return self.role == "admin"
 
+    def set_reset_token(self, raw_token, expires_at):
+        self.reset_token_hash = generate_password_hash(raw_token)
+        self.reset_token_expires = expires_at
+
+    def check_reset_token(self, raw_token):
+        if not self.reset_token_hash or not self.reset_token_expires:
+            return False
+        if datetime.utcnow() > self.reset_token_expires:
+            return False
+        return check_password_hash(self.reset_token_hash, raw_token)
+
+    def clear_reset_token(self):
+        self.reset_token_hash = None
+        self.reset_token_expires = None
+
     @property
     def average_rating(self):
         reviews = self.reviews_received
@@ -74,6 +95,7 @@ class User(UserMixin, db.Model):
             "bio": self.bio,
             "role": self.role,
             "is_private": self.is_private,
+            "is_suspended": self.is_suspended,
             "city": self.city,
             "latitude": self.latitude,
             "longitude": self.longitude,

@@ -17,7 +17,8 @@ class Message(db.Model):
         db.ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
     )
-    content = db.Column(db.Text, nullable=False)
+    content = db.Column(db.Text)
+    image = db.Column(db.String(255))  # evidencia opcional (RF09)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     sender = db.relationship(
@@ -37,5 +38,6 @@ class Message(db.Model):
             "sender_id": self.sender_id,
             "receiver_id": self.receiver_id,
             "content": self.content,
+            "image": self.image,
             "timestamp": self.timestamp.isoformat() if self.timestamp else None,
         }

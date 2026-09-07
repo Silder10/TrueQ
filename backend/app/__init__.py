@@ -3,7 +3,7 @@ import os
 from flask import Flask, jsonify
 
 from app.config import CONFIG_BY_NAME
-from app.extensions import cors, csrf, db, login_manager, migrate
+from app.extensions import cors, csrf, db, login_manager, migrate, socketio
 
 
 def create_app(config_name=None):
@@ -36,6 +36,19 @@ def _register_extensions(app):
         origins=app.config["CORS_ORIGINS"],
     )
 
+    # async_mode="threading": no requiere eventlet/gevent, funciona con el
+    # servidor de desarrollo de Werkzeug. Es "tiempo real" real (los mensajes
+    # llegan sin recargar la página), aunque con eventlet/gevent en
+    # producción el transporte por websocket puro sería más eficiente.
+    socketio.init_app(
+        app,
+        cors_allowed_origins=app.config["CORS_ORIGINS"],
+        async_mode="threading",
+        manage_session=False,  # usamos la sesión de Flask-Login, no la propia de socketio
+    )
+
+    from app import sockets  # noqa: F401  (registra los handlers de eventos)
+
     # La API es JSON puro: si Flask-Login detecta que faltan credenciales
     # no debe intentar redirigir a una vista de login que no existe aquí.
     @login_manager.unauthorized_handler
@@ -50,6 +63,7 @@ def _register_blueprints(app):
     from app.blueprints.exchanges import exchanges_bp
     from app.blueprints.favorites import favorites_bp
     from app.blueprints.notifications import notifications_bp
+    from app.blueprints.reports import reports_bp
     from app.blueprints.reviews import reviews_bp
     from app.blueprints.users import users_bp
 
@@ -60,6 +74,7 @@ def _register_blueprints(app):
     app.register_blueprint(chat_bp)
     app.register_blueprint(notifications_bp)
     app.register_blueprint(reviews_bp)
+    app.register_blueprint(reports_bp)
     app.register_blueprint(admin_bp)
 
 

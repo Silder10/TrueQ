@@ -97,6 +97,20 @@
   color: var(--danger) !important;
 }
 
+.tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  margin-left: 4px;
+  background: var(--danger);
+  color: #fff;
+  border-radius: var(--radius-pill);
+  font-size: 0.68rem;
+}
+
 @media (max-width: 560px) {
   .admin-table-row {
     flex-wrap: wrap;

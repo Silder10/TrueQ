@@ -1,8 +1,10 @@
-from flask import Blueprint, jsonify, request
+import os
+
+from flask import Blueprint, current_app, jsonify, request
 from flask_login import current_user, login_required
 
 from app.extensions import db
-from app.models import Exchange, ExchangeCategory, ExchangeRequest, RequestStatus
+from app.models import Exchange, ExchangeCategory, ExchangeRequest, ModerationStatus, RequestStatus
 from app.services.geolocation import distance_km
 from app.services.notifications import notify
 from app.services.uploads import InvalidImageError, save_image
@@ -31,8 +33,20 @@ def list_exchanges():
 
     query = Exchange.query
 
+    # RF15: solo se listan publicaciones aprobadas por un admin, salvo que
+    # el usuario esté mirando su propio perfil (ahí ve también lo pendiente/
+    # rechazado, para que sepa el estado de lo suyo) o sea admin.
+    if owner_id and owner_id.isdigit() and int(owner_id) == current_user.id:
+        pass  # el dueño ve todas sus publicaciones, en cualquier estado
+    elif current_user.is_admin():
+        pass  # el admin también puede filtrar/ver todo desde este listado
+    else:
+        query = query.filter_by(moderation_status=ModerationStatus.APROBADO)
+
     if search:
-        query = query.filter(Exchange.title.ilike(f"%{search}%"))
+        query = query.filter(
+            db.or_(Exchange.title.ilike(f"%{search}%"), Exchange.description.ilike(f"%{search}%"))
+        )
     if category:
         try:
             category_enum = ExchangeCategory(category)
@@ -118,7 +132,87 @@ def create_exchange():
 @login_required
 def get_exchange(exchange_id):
     exchange = Exchange.query.get_or_404(exchange_id)
+
+    is_owner = exchange.owner_id == current_user.id
+    if exchange.moderation_status != ModerationStatus.APROBADO and not is_owner and not current_user.is_admin():
+        return jsonify(error="Esta publicación todavía no está disponible."), 404
+
     return jsonify(exchange=_exchange_with_distance(exchange))
+
+
+@exchanges_bp.put("/<int:exchange_id>")
+@login_required
+def update_exchange(exchange_id):
+    exchange = Exchange.query.get_or_404(exchange_id)
+
+    if exchange.owner_id != current_user.id:
+        return jsonify(error="Solo el dueño puede editar esta publicación."), 403
+
+    title = request.form.get("title")
+    offers = request.form.get("offers")
+    seeks = request.form.get("seeks")
+    description = request.form.get("description")
+    category_raw = request.form.get("category")
+
+    if title is not None:
+        title = title.strip()
+        if not title:
+            return jsonify(error="Datos inválidos.", fields={"title": "El título no puede quedar vacío."}), 400
+        exchange.title = title
+
+    if offers is not None:
+        offers = offers.strip()
+        if not offers:
+            return jsonify(error="Datos inválidos.", fields={"offers": "Contá qué ofreces."}), 400
+        exchange.offers = offers
+
+    if seeks is not None:
+        seeks = seeks.strip()
+        if not seeks:
+            return jsonify(error="Datos inválidos.", fields={"seeks": "Contá qué buscas."}), 400
+        exchange.seeks = seeks
+
+    if description is not None:
+        exchange.description = description.strip() or None
+
+    if category_raw:
+        try:
+            exchange.category = ExchangeCategory(category_raw.strip())
+        except ValueError:
+            return jsonify(error="Datos inválidos.", fields={"category": "Tipo de intercambio inválido."}), 400
+
+    image = request.files.get("image")
+    if image and image.filename != "":
+        try:
+            exchange.image = save_image(image, old_filename=exchange.image, default="exchange.png")
+        except InvalidImageError as exc:
+            return jsonify(error=str(exc)), 400
+
+    # Editar una publicación la vuelve a mandar a revisión: RF15 pide que un
+    # admin apruebe el contenido antes de que sea visible para otros.
+    exchange.moderation_status = ModerationStatus.PENDIENTE
+    db.session.commit()
+
+    return jsonify(exchange=exchange.to_dict())
+
+
+@exchanges_bp.delete("/<int:exchange_id>")
+@login_required
+def delete_exchange(exchange_id):
+    exchange = Exchange.query.get_or_404(exchange_id)
+
+    if exchange.owner_id != current_user.id:
+        return jsonify(error="Solo el dueño puede eliminar esta publicación."), 403
+
+    if exchange.image != "exchange.png":
+        image_path = os.path.join(current_app.config["UPLOAD_FOLDER"], exchange.image)
+        if os.path.exists(image_path):
+            os.remove(image_path)
+
+    db.session.delete(exchange)
+    db.session.commit()
+
+    return jsonify(message="Publicación eliminada.")
 
 
 @exchanges_bp.post("/<int:exchange_id>/request")

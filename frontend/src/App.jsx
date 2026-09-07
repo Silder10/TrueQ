@@ -5,6 +5,8 @@ import { AppLayout } from "./layouts/AppLayout";
 
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
+import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
+import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { ExchangesPage } from "./pages/ExchangesPage";
 import { ExchangeDetailPage } from "./pages/ExchangeDetailPage";
 import { CreateExchangePage } from "./pages/CreateExchangePage";
@@ -43,12 +45,15 @@ function AppRoutes() {
           </RedirectIfAuthed>
         }
       />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       <Route element={<RequireAuth />}>
         <Route element={<AppLayout />}>
           <Route path="/exchanges" element={<ExchangesPage />} />
           <Route path="/exchanges/:id" element={<ExchangeDetailPage />} />
           <Route path="/create-exchange" element={<CreateExchangePage />} />
+          <Route path="/exchanges/:id/edit" element={<CreateExchangePage />} />
           <Route path="/requests" element={<RequestsPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/favorites" element={<FavoritesPage />} />

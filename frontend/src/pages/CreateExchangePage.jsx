@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ImagePlus, Package, Wrench, Boxes } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { api } from "../api/client";
+import { useNavigate, useParams } from "react-router-dom";
+import { api, uploadUrl } from "../api/client";
 import "./CreateExchangePage.css";
 
 const CATEGORIES = [
@@ -11,20 +11,43 @@ const CATEGORIES = [
 ];
 
 export function CreateExchangePage() {
+  const { id } = useParams(); // presente solo en modo edición (/exchanges/:id/edit)
+  const isEditMode = Boolean(id);
   const navigate = useNavigate();
+
   const [form, setForm] = useState({ category: "", title: "", offers: "", seeks: "", description: "" });
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(isEditMode);
+
+  useEffect(() => {
+    if (!isEditMode) return;
+    api
+      .get(`/api/exchanges/${id}`)
+      .then((data) => {
+        const e = data.exchange;
+        setForm({
+          category: e.category,
+          title: e.title,
+          offers: e.offers,
+          seeks: e.seeks,
+          description: e.description || "",
+        });
+        setPreview(uploadUrl(e.image));
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [id, isEditMode]);
 
   const update = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     setImage(file || null);
-    setPreview(file ? URL.createObjectURL(file) : null);
+    setPreview(file ? URL.createObjectURL(file) : preview);
   };
 
   const handleSubmit = async (e) => {
@@ -42,7 +65,9 @@ export function CreateExchangePage() {
     if (image) formData.append("image", image);
 
     try {
-      const data = await api.postForm("/api/exchanges", formData);
+      const data = isEditMode
+        ? await api.putForm(`/api/exchanges/${id}`, formData)
+        : await api.postForm("/api/exchanges", formData);
       navigate(`/exchanges/${data.exchange.id}`);
     } catch (err) {
       setError(err.message);
@@ -52,11 +77,17 @@ export function CreateExchangePage() {
     }
   };
 
+  if (loading) return <p>Cargando…</p>;
+
   return (
     <div className="stack create-exchange" style={{ maxWidth: 640 }}>
       <div>
-        <h1>Publicar algo para intercambiar</h1>
-        <p>Contale a la comunidad qué tienes y qué buscas a cambio.</p>
+        <h1>{isEditMode ? "Editar publicación" : "Publicar algo para intercambiar"}</h1>
+        <p>
+          {isEditMode
+            ? "Los cambios vuelven a pasar por revisión de un administrador."
+            : "Contale a la comunidad qué tienes y qué buscas a cambio."}
+        </p>
       </div>
 
       {error && <div className="banner banner-error">{error}</div>}
@@ -131,7 +162,7 @@ export function CreateExchangePage() {
         </section>
 
         <button type="submit" className="btn btn-primary btn-full" disabled={submitting}>
-          {submitting ? <span className="spinner" /> : "Publicar intercambio"}
+          {submitting ? <span className="spinner" /> : isEditMode ? "Guardar cambios" : "Publicar intercambio"}
         </button>
       </form>
     </div>

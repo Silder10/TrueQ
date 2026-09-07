@@ -98,9 +98,9 @@ de los bugs del proyecto original. En resumen, esta versión corrige:
 
 ## Actualizar una base de datos existente
 
-Como el esquema cambió (tabla `reviews` nueva, columnas nuevas en `users`,
-`category`/`offers`/`seeks` en `exchanges`), si ya tenías `trueq_db` creada de
-una ronda anterior hay que recrearla:
+El esquema volvió a cambiar en esta ronda (tablas `reports`, `blocks`,
+`muted_conversations`, y columnas nuevas en `users`/`exchanges`/`messages`).
+Si ya tenías `trueq_db` de una ronda anterior, hay que recrearla:
 
 ```bash
 mysql -u root -e "DROP DATABASE trueq_db; CREATE DATABASE trueq_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
@@ -119,6 +119,43 @@ por esa distancia.
 
 Si el usuario no da permiso de ubicación, puede escribir su ciudad a mano; en
 ese caso no hay distancia en km, solo el nombre de la ciudad.
+
+## Cobertura de requisitos (FASE_REQUISITOS_TrueQ.pdf)
+
+| # | Requisito | Estado |
+|---|---|---|
+| RF01 | Registro de usuarios | ✅ (solo correo, no teléfono todavía) |
+| RF02 | Autenticación | ✅ |
+| RF03 | Contraseñas seguras + recuperación | ✅ hash + reseteo por token — **envío de email simulado, ver nota abajo** |
+| RF04 | Gestión de publicaciones (crear/editar/eliminar) | ✅ |
+| RF05 | Gestión de reportes (admin) | ✅ |
+| RF06 | Condiciones de intercambio (ofrece/busca) | ✅ |
+| RF07 | Geolocalización | ✅ (ciudad + distancia real; radio configurable pendiente) |
+| RF08 | Búsqueda y filtros | ✅ (título + descripción + categoría + distancia) |
+| RF09 | Chat en tiempo real | ✅ Socket.IO + imágenes + silenciar/bloquear (cifrado end-to-end no implementado) |
+| RF10 | Valoraciones y reputación | ✅ |
+| RF11 | Notificaciones | ✅ in-app (push fuera de alcance) |
+| RF12 | Historial de intercambios | Parcial (el estado existe, falta pantalla dedicada) |
+| RF13 | Reportes y bloqueo de usuarios | ✅ |
+| RF14 | Gestión de perfil | ✅ |
+| RF15 | Moderación de contenido (revisión manual) | ✅ toda publicación nace Pendiente y requiere aprobación de admin |
+
+### ⚠️ Nota importante sobre RF03 (recuperar contraseña)
+
+El backend genera el token de forma segura (hasheado, expira en 1 hora) y
+tiene toda la lógica lista, pero el **envío real del correo no está
+conectado** — en vez de mandar un email, el enlace de recuperación se
+imprime en el log del servidor (`current_app.logger.warning(...)`). Para que
+esto funcione de verdad en producción hace falta:
+1. Contratar/configurar un proveedor SMTP (Gmail con contraseña de aplicación,
+   SendGrid, Mailgun, etc.)
+2. Instalar `Flask-Mail` y configurar sus credenciales en `.env`
+3. Reemplazar el `current_app.logger.warning(...)` en
+   `backend/app/blueprints/auth/routes.py` (función `forgot_password`) por el
+   envío real.
+
+No se pudo dejar esto funcionando end-to-end en este entorno de desarrollo
+porque requiere credenciales de un servicio externo real.
 
 ## Pendiente / próximos pasos sugeridos
 

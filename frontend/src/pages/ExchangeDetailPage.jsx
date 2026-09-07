@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, CheckCircle, MapPin, MessageCircle, Repeat, Star } from "lucide-react";
+import { ArrowLeft, CheckCircle, Flag, MapPin, MessageCircle, Pencil, Repeat, Star, Trash2 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, uploadUrl } from "../api/client";
 import { useAuth } from "../context/AuthContext";
+import { ReportModal } from "../components/ReportModal";
 import "./ExchangeDetailPage.css";
 
 const CATEGORY_ICON = { Materiales: "🧱", Bienes: "📦", Servicios: "🛠" };
@@ -76,6 +77,8 @@ export function ExchangeDetailPage() {
   const [myRequests, setMyRequests] = useState([]);
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const [completing, setCompleting] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const load = () => {
     api
@@ -121,6 +124,18 @@ export function ExchangeDetailPage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!confirm("¿Eliminar esta publicación? No se puede deshacer.")) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/api/exchanges/${id}`);
+      navigate("/exchanges");
+    } catch (err) {
+      setError(err.message);
+      setDeleting(false);
+    }
+  };
+
   if (loading) return <p>Cargando…</p>;
   if (!exchange) return <div className="banner banner-error">No se encontró esta publicación.</div>;
 
@@ -153,6 +168,14 @@ export function ExchangeDetailPage() {
           </div>
 
           {exchange.description && <p className="exchange-detail-desc">{exchange.description}</p>}
+
+          {isOwner && exchange.moderation_status !== "Aprobado" && (
+            <div className={`banner ${exchange.moderation_status === "Rechazado" ? "banner-error" : ""}`} style={exchange.moderation_status === "Pendiente" ? { background: "#fffbeb", color: "#92620a" } : {}}>
+              {exchange.moderation_status === "Pendiente"
+                ? "⏳ Esta publicación está en revisión y todavía no es visible para otros usuarios."
+                : `🚫 Rechazada por un administrador${exchange.moderation_note ? `: ${exchange.moderation_note}` : "."}`}
+            </div>
+          )}
 
           {exchange.owner && (
             <Link to={`/profile/${exchange.owner.id}`} className="exchange-detail-owner">
@@ -189,6 +212,12 @@ export function ExchangeDetailPage() {
                   {completing ? <span className="spinner" /> : <><CheckCircle size={16} /> Marcar como completado</>}
                 </button>
               )}
+              <button className="btn btn-outline" onClick={() => navigate(`/exchanges/${id}/edit`)}>
+                <Pencil size={16} /> Editar
+              </button>
+              <button className="btn btn-danger" onClick={handleDelete} disabled={deleting}>
+                {deleting ? <span className="spinner" /> : <><Trash2 size={16} /> Eliminar</>}
+              </button>
             </div>
           ) : (
             <div className="exchange-detail-actions">
@@ -208,10 +237,17 @@ export function ExchangeDetailPage() {
               <button className="btn btn-outline" onClick={() => navigate(`/chat/${exchange.owner.id}`)}>
                 <MessageCircle size={17} /> Iniciar chat
               </button>
+              <button className="btn btn-outline" onClick={() => setShowReport(true)}>
+                <Flag size={16} /> Reportar
+              </button>
             </div>
           )}
         </div>
       </div>
+
+      {showReport && (
+        <ReportModal targetType="publicacion" targetId={exchange.id} onClose={() => setShowReport(false)} />
+      )}
 
       {canShowReviewForm && (
         reviewSubmitted ? (

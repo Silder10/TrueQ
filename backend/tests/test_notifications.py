@@ -1,14 +1,18 @@
+from app.models import Exchange, ModerationStatus
 from tests.conftest import register_user
 
 
-def _trigger_notification(client):
+def _trigger_notification(client, db):
     """El dueño recibe una notificación cuando alguien solicita su exchange."""
     register_user(client, username="owner", email="owner@example.com")
-    client.post(
+    create = client.post(
         "/api/exchanges",
         data={"title": "Silla", "offers": "Silla", "seeks": "Mesa", "category": "Bienes"},
     )
-    exchange_id = client.get("/api/exchanges").get_json()["items"][0]["id"]
+    exchange_id = create.get_json()["exchange"]["id"]
+    exchange = db.session.get(Exchange, exchange_id)
+    exchange.moderation_status = ModerationStatus.APROBADO
+    db.session.commit()
     client.post("/api/auth/logout")
 
     register_user(client, username="requester", email="req@example.com")
@@ -18,32 +22,32 @@ def _trigger_notification(client):
     client.post("/api/auth/login", json={"email": "owner@example.com", "password": "clave1234"})
 
 
-def test_unread_count_increases_on_notification(client):
-    _trigger_notification(client)
+def test_unread_count_increases_on_notification(client, db):
+    _trigger_notification(client, db)
     response = client.get("/api/notifications/unread-count")
     assert response.get_json()["count"] == 1
 
 
-def test_listing_notifications_does_not_mark_as_read(client):
+def test_listing_notifications_does_not_mark_as_read(client, db):
     """
     Bug original: listar notificaciones las marcaba todas como leídas
     automáticamente, por eso nunca había nada que mostrar en un contador.
     """
-    _trigger_notification(client)
+    _trigger_notification(client, db)
     client.get("/api/notifications")  # solo listar, no debería tocar is_read
     response = client.get("/api/notifications/unread-count")
     assert response.get_json()["count"] == 1
 
 
-def test_mark_all_read_clears_count(client):
-    _trigger_notification(client)
+def test_mark_all_read_clears_count(client, db):
+    _trigger_notification(client, db)
     client.post("/api/notifications/read-all")
     response = client.get("/api/notifications/unread-count")
     assert response.get_json()["count"] == 0
 
 
-def test_mark_single_notification_read(client):
-    _trigger_notification(client)
+def test_mark_single_notification_read(client, db):
+    _trigger_notification(client, db)
     notif_id = client.get("/api/notifications").get_json()["items"][0]["id"]
     response = client.post(f"/api/notifications/{notif_id}/read")
     assert response.status_code == 200

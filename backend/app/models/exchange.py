@@ -17,6 +17,12 @@ class ExchangeCategory(str, enum.Enum):
     SERVICIOS = "Servicios"
 
 
+class ModerationStatus(str, enum.Enum):
+    PENDIENTE = "Pendiente"
+    APROBADO = "Aprobado"
+    RECHAZADO = "Rechazado"
+
+
 class Exchange(db.Model):
     __tablename__ = "exchanges"
 
@@ -40,6 +46,17 @@ class Exchange(db.Model):
         default=ExchangeStatus.DISPONIBLE,
         nullable=False,
     )
+
+    # RF15: toda publicación nace Pendiente y no aparece en el listado
+    # público hasta que un admin la apruebe. Editarla la vuelve a mandar
+    # a revisión (ver update_exchange).
+    moderation_status = db.Column(
+        db.Enum(ModerationStatus, values_callable=lambda enum_cls: [e.value for e in enum_cls]),
+        default=ModerationStatus.PENDIENTE,
+        nullable=False,
+    )
+    moderation_note = db.Column(db.String(255))  # motivo si fue rechazada
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     owner_id = db.Column(
@@ -77,6 +94,8 @@ class Exchange(db.Model):
             "category": self.category.value if self.category else None,
             "image": self.image,
             "status": self.status.value if self.status else None,
+            "moderation_status": self.moderation_status.value if self.moderation_status else None,
+            "moderation_note": self.moderation_note,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "owner_id": self.owner_id,
         }

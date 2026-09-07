@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { MapPin, Star } from "lucide-react";
+import { Flag, MapPin, Star, UserX } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api, uploadUrl } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { ExchangeCard } from "../components/ExchangeCard";
+import { ReportModal } from "../components/ReportModal";
 import "./ProfilePage.css";
 
 const TABS = ["Intercambios", "Reseñas"];
@@ -17,6 +18,9 @@ export function ProfilePage() {
   const [tab, setTab] = useState("Intercambios");
   const [exchanges, setExchanges] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [showReport, setShowReport] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  const [blockBusy, setBlockBusy] = useState(false);
 
   useEffect(() => {
     api
@@ -44,6 +48,23 @@ export function ProfilePage() {
 
   const isSelf = currentUser?.id === profile.id;
 
+  const toggleBlock = async () => {
+    setBlockBusy(true);
+    try {
+      if (blocked) {
+        await api.delete(`/api/users/${profile.id}/block`);
+        setBlocked(false);
+      } else {
+        await api.post(`/api/users/${profile.id}/block`);
+        setBlocked(true);
+      }
+    } catch {
+      // silencioso
+    } finally {
+      setBlockBusy(false);
+    }
+  };
+
   return (
     <div className="stack">
       <div className="profile-header card">
@@ -70,11 +91,28 @@ export function ProfilePage() {
             Editar perfil
           </button>
         ) : (
-          <button className="btn btn-primary" onClick={() => navigate(`/chat/${profile.id}`)}>
-            Enviar mensaje
-          </button>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <button className="btn btn-primary" onClick={() => navigate(`/chat/${profile.id}`)}>
+              Enviar mensaje
+            </button>
+            <button className="btn btn-outline btn-icon" onClick={() => setShowReport(true)} aria-label="Reportar">
+              <Flag size={16} />
+            </button>
+            <button
+              className={`btn btn-icon ${blocked ? "btn-danger" : "btn-outline"}`}
+              onClick={toggleBlock}
+              disabled={blockBusy}
+              aria-label={blocked ? "Desbloquear" : "Bloquear"}
+            >
+              <UserX size={16} />
+            </button>
+          </div>
         )}
       </div>
+
+      {showReport && (
+        <ReportModal targetType="usuario" targetId={profile.id} onClose={() => setShowReport(false)} />
+      )}
 
       <div className="profile-tabs">
         {TABS.map((t) => (

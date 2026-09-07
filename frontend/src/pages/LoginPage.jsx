@@ -75,6 +75,8 @@ export function LoginPage() {
 
         <p className="auth-switch">
           ¿No tienes cuenta? <Link to="/register">Regístrate</Link>
+          {" · "}
+          <Link to="/forgot-password">¿Olvidaste tu contraseña?</Link>
         </p>
       </div>
     </div>
