@@ -293,3 +293,56 @@ def complete_exchange(exchange_id):
     db.session.commit()
 
     return jsonify(exchange=exchange.to_dict())
+
+
+@exchanges_bp.get("/history")
+@login_required
+def history():
+    """
+    RF12: historial de intercambios. Solo muestra trueques COMPLETADOS
+    (no aparecen los pendientes, en proceso, ni cancelados) donde el
+    usuario actual participó, ya sea como dueño de la publicación o como
+    solicitante con una solicitud aceptada.
+    """
+    from app.models import ExchangeStatus
+
+    owned_completed = Exchange.query.filter_by(
+        owner_id=current_user.id, status=ExchangeStatus.COMPLETADO
+    ).all()
+
+    participated_ids = (
+        db.session.query(ExchangeRequest.exchange_id)
+        .filter_by(requester_id=current_user.id, status=RequestStatus.ACEPTADA)
+        .subquery()
+    )
+    participated_completed = Exchange.query.filter(
+        Exchange.id.in_(participated_ids), Exchange.status == ExchangeStatus.COMPLETADO
+    ).all()
+
+    all_exchanges = {e.id: e for e in owned_completed + participated_completed}.values()
+
+    items = []
+    for exchange in all_exchanges:
+        accepted_request = ExchangeRequest.query.filter_by(
+            exchange_id=exchange.id, status=RequestStatus.ACEPTADA
+        ).first()
+        other_participant = None
+        if exchange.owner_id == current_user.id and accepted_request:
+            other_participant = accepted_request.requester
+        elif accepted_request:
+            other_participant = exchange.owner
+
+        items.append({
+            "exchange_id": exchange.id,
+            "title": exchange.title,
+            "offers": exchange.offers,
+            "seeks": exchange.seeks,
+            "image": exchange.image,
+            "status": exchange.status.value,
+            "created_at": exchange.created_at.isoformat() if exchange.created_at else None,
+            "other_participant": other_participant.to_dict() if other_participant else None,
+        })
+
+    items.sort(key=lambda i: i["created_at"] or "", reverse=True)
+
+    return jsonify(items=items)

@@ -78,3 +78,32 @@ def test_register_rejects_invalid_interest(client):
     )
     assert response.status_code == 400
     assert "interests" in response.get_json()["fields"]
+
+
+def test_register_with_phone_only(client):
+    response = client.post(
+        "/api/auth/register",
+        json={"username": "ana", "phone": "3001234567", "password": "clave1234"},
+    )
+    assert response.status_code == 201
+    assert response.get_json()["user"]["phone"] == "3001234567"
+
+
+def test_register_requires_email_or_phone(client):
+    response = client.post(
+        "/api/auth/register",
+        json={"username": "ana", "password": "clave1234"},
+    )
+    assert response.status_code == 400
+    assert "email" in response.get_json()["fields"]
+
+
+def test_login_with_phone(client):
+    client.post(
+        "/api/auth/register",
+        json={"username": "ana", "phone": "3001234567", "password": "clave1234"},
+    )
+    client.post("/api/auth/logout")
+
+    response = client.post("/api/auth/login", json={"identifier": "3001234567", "password": "clave1234"})
+    assert response.status_code == 200

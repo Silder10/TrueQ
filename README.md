@@ -124,7 +124,7 @@ ese caso no hay distancia en km, solo el nombre de la ciudad.
 
 | # | Requisito | Estado |
 |---|---|---|
-| RF01 | Registro de usuarios | ✅ (solo correo, no teléfono todavía) |
+| RF01 | Registro de usuarios (correo o teléfono) | ✅ |
 | RF02 | Autenticación | ✅ |
 | RF03 | Contraseñas seguras + recuperación | ✅ hash + reseteo por token — **envío de email simulado, ver nota abajo** |
 | RF04 | Gestión de publicaciones (crear/editar/eliminar) | ✅ |
@@ -135,7 +135,7 @@ ese caso no hay distancia en km, solo el nombre de la ciudad.
 | RF09 | Chat en tiempo real | ✅ Socket.IO + imágenes + silenciar/bloquear (cifrado end-to-end no implementado) |
 | RF10 | Valoraciones y reputación | ✅ |
 | RF11 | Notificaciones | ✅ in-app (push fuera de alcance) |
-| RF12 | Historial de intercambios | Parcial (el estado existe, falta pantalla dedicada) |
+| RF12 | Historial de intercambios | ✅ pantalla dedicada, solo muestra completados |
 | RF13 | Reportes y bloqueo de usuarios | ✅ |
 | RF14 | Gestión de perfil | ✅ |
 | RF15 | Moderación de contenido (revisión manual) | ✅ toda publicación nace Pendiente y requiere aprobación de admin |

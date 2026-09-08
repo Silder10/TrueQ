@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   Bell,
   Heart,
+  History,
   Home,
   LogOut,
   Menu,
@@ -26,6 +27,7 @@ const PRIMARY_LINKS = [
 
 const SECONDARY_LINKS = [
   { to: "/favorites", label: "Favoritos", icon: Heart },
+  { to: "/history", label: "Historial", icon: History },
   { to: "/requests", label: "Solicitudes", icon: Bell },
   { to: "/notifications", label: "Notificaciones", icon: Bell },
   { to: "/settings", label: "Configuración", icon: Settings },

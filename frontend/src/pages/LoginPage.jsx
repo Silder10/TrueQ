@@ -6,7 +6,7 @@ import "./AuthPage.css";
 export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -16,7 +16,7 @@ export function LoginPage() {
     setError(null);
     setSubmitting(true);
     try {
-      await login(email, password);
+      await login(identifier, password);
       navigate("/exchanges");
     } catch (err) {
       setError(err.message);
@@ -45,14 +45,13 @@ export function LoginPage() {
 
         <form onSubmit={handleSubmit} className="stack">
           <div className="field">
-            <label htmlFor="email">Correo</label>
+            <label htmlFor="identifier">Correo o teléfono</label>
             <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="identifier"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
               required
-              autoComplete="email"
+              autoComplete="username"
             />
           </div>
 

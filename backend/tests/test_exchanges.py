@@ -265,3 +265,40 @@ def test_non_owner_cannot_delete_exchange(client, db):
     register_user(client, username="stranger", email="stranger@example.com")
     response = client.delete(f"/api/exchanges/{exchange_id}")
     assert response.status_code == 403
+
+
+def test_history_shows_only_completed_exchanges(client, db):
+    register_user(client, username="owner", email="owner@example.com")
+    completed_id = _create_and_approve(client, db, title="Completado")
+    pending_id = _create_and_approve(client, db, title="Todavía pendiente")
+    client.post(f"/api/exchanges/{completed_id}/complete")
+
+    response = client.get("/api/exchanges/history")
+    items = response.get_json()["items"]
+
+    titles = [i["title"] for i in items]
+    assert "Completado" in titles
+    assert "Todavía pendiente" not in titles
+
+
+def test_history_includes_other_participant(client, db):
+    register_user(client, username="owner", email="owner@example.com")
+    exchange_id = _create_and_approve(client, db, title="Trueque real")
+    client.post("/api/auth/logout")
+
+    register_user(client, username="requester", email="req@example.com")
+    request_response = client.post(f"/api/exchanges/{exchange_id}/request")
+    request_id = request_response.get_json()["request"]["id"]
+    client.post("/api/auth/logout")
+
+    client.post("/api/auth/login", json={"email": "owner@example.com", "password": "clave1234"})
+    client.post(f"/api/exchanges/requests/{request_id}/accept")
+    client.post(f"/api/exchanges/{exchange_id}/complete")
+
+    owner_history = client.get("/api/exchanges/history").get_json()["items"]
+    assert owner_history[0]["other_participant"]["username"] == "requester"
+
+    client.post("/api/auth/logout")
+    client.post("/api/auth/login", json={"email": "req@example.com", "password": "clave1234"})
+    requester_history = client.get("/api/exchanges/history").get_json()["items"]
+    assert requester_history[0]["other_participant"]["username"] == "owner"

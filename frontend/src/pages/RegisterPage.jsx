@@ -21,6 +21,7 @@ export function RegisterPage() {
   const [form, setForm] = useState({
     username: "",
     email: "",
+    phone: "",
     password: "",
     interests: [],
     city: "",
@@ -45,7 +46,10 @@ export function RegisterPage() {
   };
 
   const canAdvance = () => {
-    if (step === 1) return form.username.trim().length >= 3 && form.email.includes("@");
+    if (step === 1) {
+      const hasContact = form.email.includes("@") || form.phone.trim().length >= 7;
+      return form.username.trim().length >= 3 && hasContact;
+    }
     if (step === 2) return form.password.length >= 8;
     return true;
   };
@@ -71,7 +75,7 @@ export function RegisterPage() {
     setFieldErrors({});
     setSubmitting(true);
     try {
-      await register(form.username, form.email, form.password, form.interests, form.city, form.latitude, form.longitude);
+      await register(form.username, form.email, form.password, form.interests, form.city, form.latitude, form.longitude, form.phone);
       navigate("/exchanges");
     } catch (err) {
       setError(err.message);
@@ -115,6 +119,12 @@ export function RegisterPage() {
               <label htmlFor="email">Correo</label>
               <input id="email" type="email" value={form.email} onChange={update("email")} autoComplete="email" />
               {fieldErrors.email && <div className="field-error">{fieldErrors.email}</div>}
+            </div>
+            <div className="field">
+              <label htmlFor="phone">O tu número de teléfono</label>
+              <input id="phone" type="tel" value={form.phone} onChange={update("phone")} placeholder="Ej. 3001234567" autoComplete="tel" />
+              {fieldErrors.phone && <div className="field-error">{fieldErrors.phone}</div>}
+              <div className="field-hint">Con uno de los dos alcanza (correo o teléfono).</div>
             </div>
           </div>
         )}

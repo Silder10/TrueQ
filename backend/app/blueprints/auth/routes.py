@@ -27,7 +27,8 @@ def register():
     data = request.get_json(silent=True) or {}
 
     username = (data.get("username") or "").strip()
-    email = (data.get("email") or "").strip().lower()
+    email = (data.get("email") or "").strip().lower() or None
+    phone = (data.get("phone") or "").strip() or None
     password = data.get("password") or ""
     city = (data.get("city") or "").strip() or None
     latitude = data.get("latitude")
@@ -37,8 +38,15 @@ def register():
     errors = {}
     if len(username) < 3 or len(username) > 50:
         errors["username"] = "El usuario debe tener entre 3 y 50 caracteres."
-    if "@" not in email:
+
+    # RF01: registro con correo O número de teléfono (al menos uno).
+    if not email and not phone:
+        errors["email"] = "Ingresá un correo o un número de teléfono."
+    if email and "@" not in email:
         errors["email"] = "Correo inválido."
+    if phone and (not phone.replace("+", "").replace(" ", "").isdigit() or len(phone) < 7):
+        errors["phone"] = "Número de teléfono inválido."
+
     if len(password) < 8:
         errors["password"] = "La contraseña debe tener al menos 8 caracteres."
 
@@ -49,14 +57,17 @@ def register():
     if errors:
         return jsonify(error="Datos inválidos.", fields=errors), 400
 
-    if User.query.filter_by(email=email).first():
+    if email and User.query.filter_by(email=email).first():
         return jsonify(error="El correo ya está registrado.", fields={"email": "Ya en uso."}), 409
+
+    if phone and User.query.filter_by(phone=phone).first():
+        return jsonify(error="El teléfono ya está registrado.", fields={"phone": "Ya en uso."}), 409
 
     if User.query.filter_by(username=username).first():
         return jsonify(error="El usuario ya existe.", fields={"username": "Ya en uso."}), 409
 
     user = User(
-        username=username, email=email, city=city, interests=interests,
+        username=username, email=email, phone=phone, city=city, interests=interests,
         latitude=latitude if isinstance(latitude, (int, float)) else None,
         longitude=longitude if isinstance(longitude, (int, float)) else None,
     )
@@ -73,13 +84,16 @@ def register():
 @auth_bp.post("/login")
 def login():
     data = request.get_json(silent=True) or {}
-    email = (data.get("email") or "").strip().lower()
+    # "identifier" puede ser un correo o un número de teléfono (RF01).
+    identifier = (data.get("identifier") or data.get("email") or "").strip().lower()
     password = data.get("password") or ""
 
-    user = User.query.filter_by(email=email).first()
+    user = User.query.filter(
+        db.or_(User.email == identifier, User.phone == identifier)
+    ).first()
 
     if not user or not user.check_password(password):
-        return jsonify(error="Correo o contraseña incorrectos."), 401
+        return jsonify(error="Correo/teléfono o contraseña incorrectos."), 401
 
     if user.is_suspended:
         return jsonify(error="Tu cuenta está suspendida. Contactá a un administrador."), 403

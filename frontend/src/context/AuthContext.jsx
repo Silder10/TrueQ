@@ -17,14 +17,14 @@ export function AuthProvider({ children }) {
     refreshUser().finally(() => setLoading(false));
   }, [refreshUser]);
 
-  const login = async (email, password) => {
-    const data = await api.post("/api/auth/login", { email, password });
+  const login = async (identifier, password) => {
+    const data = await api.post("/api/auth/login", { identifier, password });
     setUser(data.user);
     return data.user;
   };
 
-  const register = async (username, email, password, interests = [], city = "", latitude = null, longitude = null) => {
-    const data = await api.post("/api/auth/register", { username, email, password, interests, city, latitude, longitude });
+  const register = async (username, email, password, interests = [], city = "", latitude = null, longitude = null, phone = "") => {
+    const data = await api.post("/api/auth/register", { username, email, phone, password, interests, city, latitude, longitude });
     setUser(data.user);
     return data.user;
   };

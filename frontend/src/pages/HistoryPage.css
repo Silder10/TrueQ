@@ -1,0 +1,46 @@
+.history-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.history-image {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+}
+
+.history-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 160px;
+}
+
+.history-participant {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.history-participant img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.history-participant div {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 480px) {
+  .history-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
