@@ -1,5 +1,6 @@
 import os
 
+import click
 from flask import Flask, jsonify
 
 from app.config import CONFIG_BY_NAME
@@ -15,6 +16,7 @@ def create_app(config_name=None):
     _register_extensions(app)
     _register_blueprints(app)
     _register_error_handlers(app)
+    _register_cli_commands(app)
 
     return app
 
@@ -98,3 +100,30 @@ def _register_error_handlers(app):
     @app.errorhandler(500)
     def server_error(_error):
         return jsonify(error="Error interno del servidor."), 500
+
+
+def _register_cli_commands(app):
+    @app.cli.command("create-admin")
+    @click.argument("identifier")
+    def create_admin(identifier):
+        """
+        Uso: flask create-admin correo@ejemplo.com  (o el username, o el teléfono)
+
+        Es la única forma de crear el PRIMER administrador: el endpoint
+        /api/admin/users/<id>/make-admin requiere ya ser admin para usarlo,
+        así que hace falta este comando de terminal para destrabar al primero.
+        Los admins siguientes ya se pueden promover desde el panel web.
+        """
+        from app.models import User
+
+        user = User.query.filter(
+            db.or_(User.email == identifier, User.username == identifier, User.phone == identifier)
+        ).first()
+
+        if not user:
+            click.echo(f"No se encontró ningún usuario con '{identifier}'.")
+            return
+
+        user.role = "admin"
+        db.session.commit()
+        click.echo(f"Listo: '{user.username}' ahora es administrador.")

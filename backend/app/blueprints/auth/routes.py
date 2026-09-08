@@ -140,7 +140,10 @@ def forgot_password():
         user.set_reset_token(raw_token, datetime.utcnow() + timedelta(hours=1))
         db.session.commit()
 
-        reset_link = f"{request.host_url.rstrip('/')}/reset-password?token={raw_token}&email={email}"
+        # BUG corregido: antes usaba request.host_url, que apunta al backend
+        # (la API), no al frontend donde vive la pantalla /reset-password.
+        # Por eso el link daba 404 ("Recurso no encontrado").
+        reset_link = f"{current_app.config['FRONTEND_URL'].rstrip('/')}/reset-password?token={raw_token}&email={email}"
         current_app.logger.warning(
             "== EMAIL SIMULADO (falta conectar SMTP real) ==\n"
             f"Para: {email}\nAsunto: Recuperá tu contraseña de TRUEQ\n"

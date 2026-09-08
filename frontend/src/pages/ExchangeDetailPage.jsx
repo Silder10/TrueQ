@@ -170,7 +170,7 @@ export function ExchangeDetailPage() {
           {exchange.description && <p className="exchange-detail-desc">{exchange.description}</p>}
 
           {isOwner && exchange.moderation_status !== "Aprobado" && (
-            <div className={`banner ${exchange.moderation_status === "Rechazado" ? "banner-error" : ""}`} style={exchange.moderation_status === "Pendiente" ? { background: "#fffbeb", color: "#92620a" } : {}}>
+            <div className={`banner ${exchange.moderation_status === "Rechazado" ? "banner-error" : ""}`} style={exchange.moderation_status === "Pendiente" ? { background: "var(--warning-bg)", color: "var(--warning)" } : {}}>
               {exchange.moderation_status === "Pendiente"
                 ? "⏳ Esta publicación está en revisión y todavía no es visible para otros usuarios."
                 : `🚫 Rechazada por un administrador${exchange.moderation_note ? `: ${exchange.moderation_note}` : "."}`}

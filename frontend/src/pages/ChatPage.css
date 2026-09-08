@@ -36,7 +36,7 @@
   flex-direction: column;
   gap: 6px;
   padding: var(--space-3);
-  background: var(--background);
+  background: var(--bg);
 }
 
 .chat-bubble {
@@ -51,7 +51,7 @@
 .chat-bubble-mine {
   align-self: flex-end;
   background: var(--secondary);
-  color: #06341c;
+  color: var(--primary-ink);
   border-radius: var(--radius-md) var(--radius-md) 2px var(--radius-md);
 }
 

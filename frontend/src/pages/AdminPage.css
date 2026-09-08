@@ -16,7 +16,7 @@
 .admin-stat strong {
   font-size: 2rem;
   font-weight: 800;
-  color: var(--dark);
+  color: var(--ink);
 }
 
 .admin-stat span {
@@ -90,7 +90,7 @@
 }
 
 .admin-menu button:hover {
-  background: var(--background);
+  background: var(--bg);
 }
 
 .admin-menu-danger {

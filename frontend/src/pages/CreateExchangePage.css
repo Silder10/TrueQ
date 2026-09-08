@@ -8,7 +8,7 @@
 .form-section-title {
   font-size: 1rem;
   margin-bottom: var(--space-3);
-  color: var(--dark);
+  color: var(--ink);
 }
 
 .type-grid {
@@ -37,7 +37,7 @@
 
 .type-card-active {
   border-color: var(--primary);
-  background: #eff8ff;
+  background: rgba(198, 255, 61, 0.1);
   color: var(--primary-dark);
 }
 

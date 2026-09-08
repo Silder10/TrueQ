@@ -96,6 +96,16 @@ de los bugs del proyecto original. En resumen, esta versión corrige:
 - **25/26 → 26/26 tests en verde** tras sumar los de reseñas y filtro por
   dueño.
 
+## Crear tu primer administrador
+
+**Importante**: ningún usuario nace admin, y el panel de admin solo lo puede usar otro admin — así que hace falta este comando de terminal una sola vez, para destrabar al primero:
+
+```bash
+flask create-admin tu-correo@ejemplo.com
+```
+
+(también podés usar el username o el teléfono con el que te registraste). Una vez creado, cerrá sesión y volvé a entrar en el frontend — ahí vas a ver la opción **Admin** en el menú. Desde el panel admin ya podés promover a otros usuarios sin volver a usar este comando.
+
 ## Actualizar una base de datos existente
 
 El esquema volvió a cambiar en esta ronda (tablas `reports`, `blocks`,
@@ -156,6 +166,16 @@ esto funcione de verdad en producción hace falta:
 
 No se pudo dejar esto funcionando end-to-end en este entorno de desarrollo
 porque requiere credenciales de un servicio externo real.
+
+## Sistema de diseño: "Mercado nocturno"
+
+El frontend usa un tema oscuro nativo (no es un modo claro con un toggle):
+fondo carbón (`#12141a`), tarjetas en `#1b1e27`, acento primario verde lima
+(`#c6ff3d`) y secundario violeta (`#8b5cf6`), tipografía Space Grotesk para
+títulos + Inter para el resto. Todo el sistema de colores vive en
+`frontend/src/styles/tokens.css` como variables CSS — si querés ajustar la
+paleta, ese es el único archivo que hay que tocar en la mayoría de los casos,
+porque el resto de los componentes usan `var(--algo)` en vez de colores fijos.
 
 ## Pendiente / próximos pasos sugeridos
 

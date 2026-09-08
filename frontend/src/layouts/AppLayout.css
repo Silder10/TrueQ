@@ -23,7 +23,7 @@
 .wordmark {
   font-weight: 800;
   font-size: 1.25rem;
-  color: var(--dark) !important;
+  color: var(--ink) !important;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
@@ -40,7 +40,7 @@
   font-size: 0.85rem;
   color: var(--ink-soft);
   font-weight: 600;
-  background: var(--background);
+  background: var(--bg);
   padding: 0.35rem 0.8rem;
   border-radius: var(--radius-pill);
 }
@@ -66,7 +66,7 @@
 }
 
 .icon-btn:hover {
-  background: var(--background);
+  background: var(--bg);
 }
 
 .avatar-thumb {
@@ -152,7 +152,7 @@
 
 .drawer-link:hover,
 .drawer-link.active {
-  background: var(--background);
+  background: var(--bg);
   color: var(--primary-dark);
 }
 

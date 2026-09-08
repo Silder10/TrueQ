@@ -1,36 +1,44 @@
 :root {
-  /* --- Paleta --- */
-  --primary: #38bdf8;
-  --primary-dark: #0284c7;
-  --secondary: #4ade80;
-  --secondary-dark: #16a34a;
-  --mint: #34d399;
-  --dark: #1e3a8a;
-  --ink: #0f172a;
-  --ink-soft: #64748b;
-  --background: #f1f5f9;
-  --surface: #ffffff;
-  --border: #e5e7eb;
-  --danger: #ef4444;
-  --danger-bg: #fef2f2;
-  --warning: #f59e0b;
-  --warning-bg: #fffbeb;
-  --success: #16a34a;
-  --success-bg: #f0fdf4;
+  /* --- Paleta: "Mercado nocturno" --- */
+  --bg: #12141a;
+  --surface: #1b1e27;
+  --surface-raised: #232733;
+  --border: #2e3340;
+  --ink: #f2f3f7;
+  --ink-soft: #9298ab;
+
+  --primary: #c6ff3d;
+  --primary-dark: #a8e01e;
+  --primary-ink: #0f1500; /* texto oscuro sobre el verde lima */
+
+  --secondary: #8b5cf6;
+  --secondary-dark: #7c3aed;
+
+  --danger: #ff5c72;
+  --danger-bg: #2a1620;
+  --warning: #ffb020;
+  --warning-bg: #2a2210;
+  --success: #4ade80;
+  --success-bg: #142a1c;
+  --info: #38bdf8;
+  --info-bg: #12222e;
 
   /* --- Tipografía --- */
+  --font-display: "Space Grotesk", "Inter", sans-serif;
   --font-body: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
 
   /* --- Radios --- */
   --radius-sm: 8px;
   --radius-md: 12px;
-  --radius-lg: 16px;
+  --radius-lg: 18px;
   --radius-pill: 999px;
 
-  /* --- Sombras --- */
-  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --shadow-md: 0 4px 16px rgba(15, 23, 42, 0.08);
-  --shadow-hover: 0 8px 24px rgba(15, 23, 42, 0.12);
+  /* --- Sombras / resplandores: en fondo oscuro la sombra gris no se ve,
+     usamos un halo sutil del color de acento en vez de gris --- */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.45);
+  --shadow-hover: 0 10px 28px rgba(0, 0, 0, 0.55);
+  --glow-primary: 0 0 0 1px rgba(198, 255, 61, 0.25), 0 8px 24px rgba(198, 255, 61, 0.08);
 
   /* --- Espaciado --- */
   --space-1: 4px;
@@ -53,7 +61,7 @@ body,
 
 body {
   margin: 0;
-  background: var(--background);
+  background: var(--bg);
   color: var(--ink);
   font-family: var(--font-body);
   font-size: 16px;
@@ -64,16 +72,16 @@ body {
 h1,
 h2,
 h3 {
-  font-family: var(--font-body);
-  font-weight: 800;
-  line-height: 1.2;
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.15;
   margin: 0 0 var(--space-2);
-  color: var(--dark);
-  letter-spacing: -0.02em;
+  color: var(--ink);
+  letter-spacing: -0.01em;
 }
 
 h1 {
-  font-size: clamp(1.8rem, 3.4vw, 2.4rem);
+  font-size: clamp(1.8rem, 3.4vw, 2.5rem);
 }
 
 h2 {
@@ -91,7 +99,7 @@ p {
 }
 
 a {
-  color: var(--primary-dark);
+  color: var(--primary);
 }
 
 button,
@@ -100,6 +108,12 @@ textarea,
 select {
   font-family: inherit;
   font-size: 1rem;
+}
+
+input,
+textarea,
+select {
+  color-scheme: dark;
 }
 
 :focus-visible {
@@ -140,23 +154,21 @@ select {
 
 .btn-primary {
   background: var(--primary);
-  color: #fff;
-  box-shadow: var(--shadow-sm);
+  color: var(--primary-ink);
 }
 
 .btn-primary:hover {
   background: var(--primary-dark);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--glow-primary);
 }
 
 .btn-secondary {
   background: var(--secondary);
-  color: #06341c;
+  color: #fff;
 }
 
 .btn-secondary:hover {
   background: var(--secondary-dark);
-  color: #fff;
 }
 
 .btn-outline {
@@ -167,7 +179,7 @@ select {
 
 .btn-outline:hover {
   border-color: var(--primary);
-  color: var(--primary-dark);
+  color: var(--primary);
 }
 
 .btn-danger {
@@ -188,7 +200,7 @@ select {
 }
 
 .btn:disabled {
-  opacity: 0.55;
+  opacity: 0.5;
   cursor: not-allowed;
   transform: none;
 }
@@ -207,7 +219,7 @@ select {
   font-weight: 600;
   margin-bottom: var(--space-1);
   font-size: 0.9rem;
-  color: var(--dark);
+  color: var(--ink);
 }
 
 .field input,
@@ -217,16 +229,21 @@ select {
   padding: 0.7rem 0.9rem;
   border: 1.5px solid var(--border);
   border-radius: var(--radius-md);
-  background: var(--surface);
+  background: var(--surface-raised);
   color: var(--ink);
   transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.field input::placeholder,
+.field textarea::placeholder {
+  color: var(--ink-soft);
 }
 
 .field input:focus,
 .field textarea:focus,
 .field select:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+  box-shadow: 0 0 0 3px rgba(198, 255, 61, 0.18);
   outline: none;
 }
 
@@ -279,13 +296,13 @@ select {
 }
 
 .badge-en-proceso {
-  background: #e0f2fe;
-  color: var(--primary-dark);
+  background: var(--info-bg);
+  color: var(--info);
 }
 
 .badge-pendiente {
   background: var(--warning-bg);
-  color: #92620a;
+  color: var(--warning);
 }
 
 .badge-completado {
@@ -295,7 +312,7 @@ select {
 
 .badge-cancelado,
 .badge-rechazada {
-  background: var(--border);
+  background: var(--surface-raised);
   color: var(--ink-soft);
 }
 
@@ -333,8 +350,8 @@ select {
 
 .card {
   background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
   padding: var(--space-4);
 }
 
@@ -372,13 +389,13 @@ select {
 
 .chip:hover {
   border-color: var(--primary);
-  color: var(--primary-dark);
+  color: var(--primary);
 }
 
 .chip-active {
-  background: var(--dark);
-  border-color: var(--dark);
-  color: #fff;
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-ink);
 }
 
 /* --- Estado vacío --- */

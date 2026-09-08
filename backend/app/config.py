@@ -27,6 +27,12 @@ class BaseConfig:
     # Orígenes permitidos para CORS (el front en dev de Vite)
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")
 
+    # Dónde vive el frontend (React). Se usa para armar links que el usuario
+    # abre en el navegador (ej. el enlace de "recuperar contraseña"), que
+    # NO deben apuntar al backend/API sino a la SPA. Por defecto, el primer
+    # origen configurado en CORS_ORIGINS.
+    FRONTEND_URL = os.getenv("FRONTEND_URL", CORS_ORIGINS[0])
+
     WTF_CSRF_TIME_LIMIT = None  # el token dura toda la sesión, no 1h por defecto
 
 
