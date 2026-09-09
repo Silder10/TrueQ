@@ -45,7 +45,7 @@ export function HistoryPage() {
                   {item.offers} ↔ {item.seeks}
                 </span>
                 <span className="field-hint">
-                  {new Date(item.created_at).toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" })}
+                  {new Date(item.completed_at || item.created_at).toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" })}
                 </span>
               </div>
               {item.other_participant && (

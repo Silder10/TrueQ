@@ -83,6 +83,13 @@ class Exchange(db.Model):
         lazy=True,
         cascade="all, delete-orphan",
     )
+    images = db.relationship(
+        "ExchangeImage",
+        backref="exchange",
+        lazy=True,
+        cascade="all, delete-orphan",
+        order_by="ExchangeImage.position",
+    )
 
     def to_dict(self, include_owner=True):
         data = {
@@ -93,6 +100,7 @@ class Exchange(db.Model):
             "description": self.description,
             "category": self.category.value if self.category else None,
             "image": self.image,
+            "images": [img.to_dict() for img in self.images],
             "status": self.status.value if self.status else None,
             "moderation_status": self.moderation_status.value if self.moderation_status else None,
             "moderation_note": self.moderation_note,

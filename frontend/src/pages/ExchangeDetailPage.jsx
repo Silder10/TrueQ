@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { ArrowLeft, CheckCircle, Flag, MapPin, MessageCircle, Pencil, Repeat, Star, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowLeft, CheckCircle, Flag, ImagePlus, MapPin, MessageCircle, Pencil, Repeat, Star, Trash2, X, XCircle } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, uploadUrl } from "../api/client";
 import { useAuth } from "../context/AuthContext";
@@ -77,13 +77,20 @@ export function ExchangeDetailPage() {
   const [myRequests, setMyRequests] = useState([]);
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const [completing, setCompleting] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [activeImage, setActiveImage] = useState(null);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const fileInputRef = useRef(null);
 
   const load = () => {
     api
       .get(`/api/exchanges/${id}`)
-      .then((data) => setExchange(data.exchange))
+      .then((data) => {
+        setExchange(data.exchange);
+        setActiveImage(data.exchange.image);
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   };
@@ -114,6 +121,7 @@ export function ExchangeDetailPage() {
 
   const handleComplete = async () => {
     setCompleting(true);
+    setError(null);
     try {
       const data = await api.post(`/api/exchanges/${id}/complete`);
       setExchange(data.exchange);
@@ -121,6 +129,20 @@ export function ExchangeDetailPage() {
       setError(err.message);
     } finally {
       setCompleting(false);
+    }
+  };
+
+  const handleCancel = async () => {
+    if (!confirm("¿Cancelar este intercambio? No se puede deshacer.")) return;
+    setCancelling(true);
+    setError(null);
+    try {
+      const data = await api.post(`/api/exchanges/${id}/cancel`);
+      setExchange(data.exchange);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -136,6 +158,36 @@ export function ExchangeDetailPage() {
     }
   };
 
+  const handleAddImages = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    setUploadingImages(true);
+    setError(null);
+    const formData = new FormData();
+    files.forEach((file) => formData.append("images", file));
+
+    try {
+      const data = await api.postForm(`/api/exchanges/${id}/images`, formData);
+      setExchange((prev) => ({ ...prev, images: [...prev.images, ...data.images] }));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUploadingImages(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleDeleteImage = async (image) => {
+    try {
+      await api.delete(`/api/exchanges/${id}/images/${image.id}`);
+      setExchange((prev) => ({ ...prev, images: prev.images.filter((i) => i.id !== image.id) }));
+      setActiveImage((current) => (current === image.filename ? exchange.image : current));
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   if (loading) return <p>Cargando…</p>;
   if (!exchange) return <div className="banner banner-error">No se encontró esta publicación.</div>;
 
@@ -147,7 +199,61 @@ export function ExchangeDetailPage() {
 
       <div className="exchange-detail-grid">
         <div className="exchange-detail-image">
-          <img src={uploadUrl(exchange.image)} alt="" />
+          <img src={uploadUrl(activeImage || exchange.image)} alt="" />
+
+          {(exchange.images.length > 0 || isOwner) && (
+            <div className="exchange-gallery-thumbs">
+              <button
+                type="button"
+                className={`exchange-gallery-thumb ${activeImage === exchange.image ? "active" : ""}`}
+                onClick={() => setActiveImage(exchange.image)}
+              >
+                <img src={uploadUrl(exchange.image)} alt="" />
+              </button>
+
+              {exchange.images.map((img) => (
+                <div key={img.id} className="exchange-gallery-thumb-wrap">
+                  <button
+                    type="button"
+                    className={`exchange-gallery-thumb ${activeImage === img.filename ? "active" : ""}`}
+                    onClick={() => setActiveImage(img.filename)}
+                  >
+                    <img src={uploadUrl(img.filename)} alt="" />
+                  </button>
+                  {isOwner && (
+                    <button
+                      type="button"
+                      className="exchange-gallery-thumb-remove"
+                      onClick={() => handleDeleteImage(img)}
+                      aria-label="Eliminar foto"
+                    >
+                      <X size={12} />
+                    </button>
+                  )}
+                </div>
+              ))}
+
+              {isOwner && exchange.images.length < 6 && (
+                <button
+                  type="button"
+                  className="exchange-gallery-thumb exchange-gallery-add"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingImages}
+                  aria-label="Agregar fotos"
+                >
+                  {uploadingImages ? <span className="spinner" /> : <ImagePlus size={18} />}
+                </button>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                hidden
+                onChange={handleAddImages}
+              />
+            </div>
+          )}
         </div>
 
         <div className="card exchange-detail-info">
@@ -207,10 +313,15 @@ export function ExchangeDetailPage() {
           {isOwner ? (
             <div className="exchange-detail-actions">
               <p className="field-hint">Esta es tu publicación.</p>
-              {exchange.status !== "Completado" && (
-                <button className="btn btn-outline" onClick={handleComplete} disabled={completing}>
-                  {completing ? <span className="spinner" /> : <><CheckCircle size={16} /> Marcar como completado</>}
-                </button>
+              {exchange.status === "En proceso" && (
+                <>
+                  <button className="btn btn-outline" onClick={handleComplete} disabled={completing}>
+                    {completing ? <span className="spinner" /> : <><CheckCircle size={16} /> Marcar como completado</>}
+                  </button>
+                  <button className="btn btn-outline" onClick={handleCancel} disabled={cancelling}>
+                    {cancelling ? <span className="spinner" /> : <><XCircle size={16} /> Cancelar intercambio</>}
+                  </button>
+                </>
               )}
               <button className="btn btn-outline" onClick={() => navigate(`/exchanges/${id}/edit`)}>
                 <Pencil size={16} /> Editar
@@ -221,18 +332,34 @@ export function ExchangeDetailPage() {
             </div>
           ) : (
             <div className="exchange-detail-actions">
-              {requestState === "sent" ? (
-                <div className="banner banner-success">Solicitud enviada — seguí la charla en Mensajes.</div>
-              ) : (
-                <button className="btn btn-primary" onClick={handleRequest} disabled={requestState === "sending"}>
-                  {requestState === "sending" ? (
-                    <span className="spinner" />
-                  ) : (
-                    <>
-                      <Repeat size={17} /> Solicitar intercambio
-                    </>
-                  )}
-                </button>
+              {exchange.status === "Completado" && (
+                <div className="banner banner-success">Este intercambio ya fue completado.</div>
+              )}
+              {exchange.status === "Cancelado" && (
+                <div className="banner banner-error">Este intercambio fue cancelado.</div>
+              )}
+              {exchange.status === "En proceso" && (
+                <>
+                  <div className="banner">Este intercambio ya tiene una solicitud aceptada y está en proceso.</div>
+                  <button className="btn btn-outline" onClick={handleCancel} disabled={cancelling}>
+                    {cancelling ? <span className="spinner" /> : <><XCircle size={16} /> Cancelar intercambio</>}
+                  </button>
+                </>
+              )}
+              {exchange.status === "Disponible" && (
+                requestState === "sent" ? (
+                  <div className="banner banner-success">Solicitud enviada — seguí la charla en Mensajes.</div>
+                ) : (
+                  <button className="btn btn-primary" onClick={handleRequest} disabled={requestState === "sending"}>
+                    {requestState === "sending" ? (
+                      <span className="spinner" />
+                    ) : (
+                      <>
+                        <Repeat size={17} /> Solicitar intercambio
+                      </>
+                    )}
+                  </button>
+                )
               )}
               <button className="btn btn-outline" onClick={() => navigate(`/chat/${exchange.owner.id}`)}>
                 <MessageCircle size={17} /> Iniciar chat

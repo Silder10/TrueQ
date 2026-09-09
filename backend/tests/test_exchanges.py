@@ -1,5 +1,19 @@
+import io
+
+from PIL import Image
+
 from app.models import Exchange, ModerationStatus
-from tests.conftest import register_user
+from tests.conftest import login_user, register_user
+
+
+def _fake_image_bytes():
+    """Genera un PNG real y válido en memoria, para probar rutas que
+    llaman a save_image() (que valida con Pillow que sea una imagen de
+    verdad, no solo una extensión .png)."""
+    buffer = io.BytesIO()
+    Image.new("RGB", (10, 10), color="blue").save(buffer, format="PNG")
+    buffer.seek(0)
+    return buffer
 
 
 def _create_exchange(client, **overrides):
@@ -195,13 +209,186 @@ def test_distance_km_is_null_without_coordinates(client, db):
     assert response.get_json()["items"][0]["distance_km"] is None
 
 
-def test_owner_can_complete_exchange(client, db):
+def test_nearby_filters_out_exchanges_beyond_radius(client, db):
+    """
+    RF08: 'nearby' debe FILTRAR por radio, no solo ordenar. Barranquilla-
+    Bogotá son ~700km, así que con un radio de 50km la publicación lejana
+    no debería aparecer en absoluto.
+    """
+    register_user(client, username="owner", email="owner@example.com")
+    client.put("/api/users/me", data={"latitude": "10.9639", "longitude": "-74.7964"})  # Barranquilla
+    _create_and_approve(client, db, title="Lejos")
+    client.post("/api/auth/logout")
+
+    register_user(client, username="viewer", email="viewer@example.com")
+    client.put("/api/users/me", data={"latitude": "4.7110", "longitude": "-74.0721"})  # Bogotá
+
+    response = client.get("/api/exchanges?nearby=true&radius_km=50")
+    assert response.get_json()["items"] == []
+
+
+def test_nearby_includes_exchanges_within_radius(client, db):
+    register_user(client, username="owner", email="owner@example.com")
+    client.put("/api/users/me", data={"latitude": "10.9639", "longitude": "-74.7964"})  # Barranquilla
+    _create_and_approve(client, db, title="Cerca")
+    client.post("/api/auth/logout")
+
+    register_user(client, username="viewer", email="viewer@example.com")
+    client.put("/api/users/me", data={"latitude": "10.9878", "longitude": "-74.7889"})  # Barranquilla, muy cerca
+
+    response = client.get("/api/exchanges?nearby=true&radius_km=50")
+    items = response.get_json()["items"]
+    assert len(items) == 1
+    assert items[0]["title"] == "Cerca"
+
+
+def test_nearby_requires_own_location(client, db):
     register_user(client)
+    _create_and_approve(client, db, title="Publicación")
+
+    response = client.get("/api/exchanges?nearby=true")
+    assert response.status_code == 400
+
+
+def test_nearby_rejects_radius_out_of_range(client, db):
+    register_user(client)
+    client.put("/api/users/me", data={"latitude": "10.9639", "longitude": "-74.7964"})
+
+    response = client.get("/api/exchanges?nearby=true&radius_km=500")
+    assert response.status_code == 400
+
+
+def test_register_rejects_invalid_coordinates(client):
+    response = client.post(
+        "/api/auth/register",
+        json={
+            "username": "conubicacionmala",
+            "email": "malaubicacion@example.com",
+            "password": "clave1234",
+            "latitude": 200,
+            "longitude": -74.79,
+        },
+    )
+    assert response.status_code == 400
+    assert "location" in response.get_json()["fields"]
+
+
+def test_update_profile_rejects_invalid_coordinates(client):
+    register_user(client)
+    response = client.put("/api/users/me", data={"latitude": "999", "longitude": "-74.79"})
+    assert response.status_code == 400
+
+
+def test_owner_can_complete_exchange(client, db):
+    """
+    RF12: solo se puede completar un intercambio que ya está "En proceso"
+    (con una solicitud aceptada), no directo desde "Disponible".
+    """
+    register_user(client, username="owner", email="owner@example.com")
     exchange_id = _create_and_approve(client, db, title="Para completar")
+    client.post("/api/auth/logout")
+
+    register_user(client, username="requester", email="requester@example.com")
+    request_id = client.post(f"/api/exchanges/{exchange_id}/request").get_json()["request"]["id"]
+    client.post("/api/auth/logout")
+
+    login_user(client, email="owner@example.com")
+    client.post(f"/api/exchanges/requests/{request_id}/accept")
 
     response = client.post(f"/api/exchanges/{exchange_id}/complete")
     assert response.status_code == 200
     assert response.get_json()["exchange"]["status"] == "Completado"
+
+
+def test_cannot_complete_exchange_still_available(client, db):
+    register_user(client)
+    exchange_id = _create_and_approve(client, db, title="Sin aceptar nada todavía")
+
+    response = client.post(f"/api/exchanges/{exchange_id}/complete")
+    assert response.status_code == 409
+
+
+def test_accepting_a_request_closes_other_pending_requests(client, db):
+    register_user(client, username="owner", email="owner@example.com")
+    exchange_id = _create_and_approve(client, db, title="Con varios interesados")
+    client.post("/api/auth/logout")
+
+    register_user(client, username="req1", email="req1@example.com")
+    request1_id = client.post(f"/api/exchanges/{exchange_id}/request").get_json()["request"]["id"]
+    client.post("/api/auth/logout")
+
+    register_user(client, username="req2", email="req2@example.com")
+    request2_id = client.post(f"/api/exchanges/{exchange_id}/request").get_json()["request"]["id"]
+    client.post("/api/auth/logout")
+
+    login_user(client, email="owner@example.com")
+    client.post(f"/api/exchanges/requests/{request1_id}/accept")
+
+    response = client.post(f"/api/exchanges/requests/{request2_id}/reject")
+    assert response.status_code == 409  # ya fue rechazada automáticamente
+
+
+def test_cannot_request_exchange_already_in_process(client, db):
+    register_user(client, username="owner", email="owner@example.com")
+    exchange_id = _create_and_approve(client, db, title="Ya con dueño de trueque")
+    client.post("/api/auth/logout")
+
+    register_user(client, username="req1", email="req1@example.com")
+    request1_id = client.post(f"/api/exchanges/{exchange_id}/request").get_json()["request"]["id"]
+    client.post("/api/auth/logout")
+
+    login_user(client, email="owner@example.com")
+    client.post(f"/api/exchanges/requests/{request1_id}/accept")
+    client.post("/api/auth/logout")
+
+    register_user(client, username="req2", email="req2@example.com")
+    response = client.post(f"/api/exchanges/{exchange_id}/request")
+    assert response.status_code == 409
+
+
+def test_accepted_requester_can_cancel_in_process_exchange(client, db):
+    register_user(client, username="owner", email="owner@example.com")
+    exchange_id = _create_and_approve(client, db, title="Trueque cancelable")
+    client.post("/api/auth/logout")
+
+    register_user(client, username="requester", email="requester@example.com")
+    request_id = client.post(f"/api/exchanges/{exchange_id}/request").get_json()["request"]["id"]
+    client.post("/api/auth/logout")
+
+    login_user(client, email="owner@example.com")
+    client.post(f"/api/exchanges/requests/{request_id}/accept")
+    client.post("/api/auth/logout")
+
+    login_user(client, email="requester@example.com")
+    response = client.post(f"/api/exchanges/{exchange_id}/cancel")
+    assert response.status_code == 200
+    assert response.get_json()["exchange"]["status"] == "Cancelado"
+
+
+def test_cannot_cancel_exchange_still_available(client, db):
+    register_user(client)
+    exchange_id = _create_and_approve(client, db, title="Todavía disponible")
+
+    response = client.post(f"/api/exchanges/{exchange_id}/cancel")
+    assert response.status_code == 409
+
+
+def test_stranger_cannot_cancel_exchange(client, db):
+    register_user(client, username="owner", email="owner@example.com")
+    exchange_id = _create_and_approve(client, db, title="Ajeno")
+    client.post("/api/auth/logout")
+
+    register_user(client, username="requester", email="requester@example.com")
+    request_id = client.post(f"/api/exchanges/{exchange_id}/request").get_json()["request"]["id"]
+    client.post("/api/auth/logout")
+
+    login_user(client, email="owner@example.com")
+    client.post(f"/api/exchanges/requests/{request_id}/accept")
+    client.post("/api/auth/logout")
+
+    register_user(client, username="stranger", email="stranger@example.com")
+    response = client.post(f"/api/exchanges/{exchange_id}/cancel")
+    assert response.status_code == 403
 
 
 def test_non_owner_cannot_complete_exchange(client, db):
@@ -271,6 +458,14 @@ def test_history_shows_only_completed_exchanges(client, db):
     register_user(client, username="owner", email="owner@example.com")
     completed_id = _create_and_approve(client, db, title="Completado")
     pending_id = _create_and_approve(client, db, title="Todavía pendiente")
+    client.post("/api/auth/logout")
+
+    register_user(client, username="requester", email="requester@example.com")
+    request_id = client.post(f"/api/exchanges/{completed_id}/request").get_json()["request"]["id"]
+    client.post("/api/auth/logout")
+
+    login_user(client, email="owner@example.com")
+    client.post(f"/api/exchanges/requests/{request_id}/accept")
     client.post(f"/api/exchanges/{completed_id}/complete")
 
     response = client.get("/api/exchanges/history")
@@ -302,3 +497,66 @@ def test_history_includes_other_participant(client, db):
     client.post("/api/auth/login", json={"email": "req@example.com", "password": "clave1234"})
     requester_history = client.get("/api/exchanges/history").get_json()["items"]
     assert requester_history[0]["other_participant"]["username"] == "owner"
+
+
+def test_owner_can_add_exchange_images(client, db):
+    register_user(client)
+    exchange_id = _create_and_approve(client, db, title="Con galería")
+
+    response = client.post(
+        f"/api/exchanges/{exchange_id}/images",
+        data={"images": [(_fake_image_bytes(), "foto1.png"), (_fake_image_bytes(), "foto2.png")]},
+        content_type="multipart/form-data",
+    )
+    assert response.status_code == 201
+    assert len(response.get_json()["images"]) == 2
+
+    detail = client.get(f"/api/exchanges/{exchange_id}").get_json()["exchange"]
+    assert len(detail["images"]) == 2
+    assert detail["images"][0]["position"] == 0
+    assert detail["images"][1]["position"] == 1
+
+
+def test_non_owner_cannot_add_exchange_images(client, db):
+    register_user(client, username="owner", email="owner@example.com")
+    exchange_id = _create_and_approve(client, db, title="Ajena")
+    client.post("/api/auth/logout")
+
+    register_user(client, username="stranger", email="stranger@example.com")
+    response = client.post(
+        f"/api/exchanges/{exchange_id}/images",
+        data={"images": [(_fake_image_bytes(), "foto.png")]},
+        content_type="multipart/form-data",
+    )
+    assert response.status_code == 403
+
+
+def test_exchange_images_have_a_max_limit(client, db):
+    register_user(client)
+    exchange_id = _create_and_approve(client, db, title="Con muchas fotos")
+
+    files = [(_fake_image_bytes(), f"foto{i}.png") for i in range(7)]
+    response = client.post(
+        f"/api/exchanges/{exchange_id}/images",
+        data={"images": files},
+        content_type="multipart/form-data",
+    )
+    assert response.status_code == 400
+
+
+def test_owner_can_delete_exchange_image(client, db):
+    register_user(client)
+    exchange_id = _create_and_approve(client, db, title="Con una foto de más")
+
+    add_response = client.post(
+        f"/api/exchanges/{exchange_id}/images",
+        data={"images": [(_fake_image_bytes(), "foto.png")]},
+        content_type="multipart/form-data",
+    )
+    image_id = add_response.get_json()["images"][0]["id"]
+
+    response = client.delete(f"/api/exchanges/{exchange_id}/images/{image_id}")
+    assert response.status_code == 200
+
+    detail = client.get(f"/api/exchanges/{exchange_id}").get_json()["exchange"]
+    assert detail["images"] == []
