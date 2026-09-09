@@ -68,55 +68,59 @@ export function ProfilePage() {
   return (
     <div className="stack">
       <div className="profile-header card">
-        <img src={uploadUrl(profile.avatar)} alt="" className="profile-avatar" />
-        <div className="profile-header-info">
-          <h1>{profile.username}</h1>
-          <div className="profile-meta">
-            {profile.city && (
-              <span>
-                <MapPin size={14} /> {profile.city}
-              </span>
-            )}
-            {profile.average_rating && (
-              <span>
-                <Star size={14} fill="currentColor" /> {profile.average_rating} ({profile.reviews_count})
-              </span>
-            )}
+        <div className="profile-header-top">
+          <img src={uploadUrl(profile.avatar)} alt="" className="profile-avatar" />
+          <div className="profile-header-info">
+            <h1>{profile.username}</h1>
+            <div className="profile-meta">
+              {profile.city && (
+                <span className="profile-meta-badge">
+                  <MapPin size={13} /> {profile.city}
+                </span>
+              )}
+              {profile.average_rating && (
+                <span className="profile-meta-badge profile-meta-rating">
+                  <Star size={13} fill="currentColor" /> {profile.average_rating} ({profile.reviews_count})
+                </span>
+              )}
+            </div>
+            {profile.bio && <p>{profile.bio}</p>}
           </div>
-          {profile.bio && <p>{profile.bio}</p>}
         </div>
 
-        {isSelf ? (
-          <button className="btn btn-outline" onClick={() => navigate("/settings")}>
-            Editar perfil
-          </button>
-        ) : (
-          <div style={{ display: "flex", gap: "0.5rem" }}>
-            <button className="btn btn-primary" onClick={() => navigate(`/chat/${profile.id}`)}>
-              Enviar mensaje
+        <div className="profile-header-actions">
+          {isSelf ? (
+            <button className="btn btn-outline" onClick={() => navigate("/settings")}>
+              Editar perfil
             </button>
-            <button className="btn btn-outline btn-icon" onClick={() => setShowReport(true)} aria-label="Reportar">
-              <Flag size={16} />
-            </button>
-            <button
-              className={`btn btn-icon ${blocked ? "btn-danger" : "btn-outline"}`}
-              onClick={toggleBlock}
-              disabled={blockBusy}
-              aria-label={blocked ? "Desbloquear" : "Bloquear"}
-            >
-              <UserX size={16} />
-            </button>
-          </div>
-        )}
+          ) : (
+            <>
+              <button className="btn btn-primary" onClick={() => navigate(`/chat/${profile.id}`)}>
+                Enviar mensaje
+              </button>
+              <button className="btn btn-outline btn-icon" onClick={() => setShowReport(true)} aria-label="Reportar">
+                <Flag size={16} />
+              </button>
+              <button
+                className={`btn btn-icon ${blocked ? "btn-danger" : "btn-outline"}`}
+                onClick={toggleBlock}
+                disabled={blockBusy}
+                aria-label={blocked ? "Desbloquear" : "Bloquear"}
+              >
+                <UserX size={16} />
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {showReport && (
         <ReportModal targetType="usuario" targetId={profile.id} onClose={() => setShowReport(false)} />
       )}
 
-      <div className="profile-tabs">
+      <div className="segmented-control">
         {TABS.map((t) => (
-          <button key={t} className={`profile-tab ${tab === t ? "profile-tab-active" : ""}`} onClick={() => setTab(t)}>
+          <button key={t} className={`segmented-option ${tab === t ? "segmented-option-active" : ""}`} onClick={() => setTab(t)}>
             {t}
           </button>
         ))}

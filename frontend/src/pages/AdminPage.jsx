@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Check, MoreVertical, Shield, ShieldOff, Trash2, X } from "lucide-react";
+import { Bell, Check, FileText, MoreVertical, Package, Shield, ShieldOff, Trash2, Users, X } from "lucide-react";
 import { api } from "../api/client";
 import "./AdminPage.css";
 import "./ProfilePage.css";
@@ -137,27 +137,31 @@ export function AdminPage() {
       {stats && (
         <div className="admin-stats">
           <div className="admin-stat">
+            <div className="admin-stat-icon"><Users size={18} /></div>
             <strong>{stats.users_count}</strong>
             <span>Usuarios</span>
           </div>
           <div className="admin-stat">
+            <div className="admin-stat-icon"><Package size={18} /></div>
             <strong>{stats.exchanges_count}</strong>
             <span>Publicaciones</span>
           </div>
-          <div className="admin-stat">
+          <div className="admin-stat admin-stat-warning">
+            <div className="admin-stat-icon"><FileText size={18} /></div>
             <strong>{stats.pending_moderation_count}</strong>
             <span>Por moderar</span>
           </div>
-          <div className="admin-stat">
+          <div className="admin-stat admin-stat-danger">
+            <div className="admin-stat-icon"><Bell size={18} /></div>
             <strong>{stats.pending_reports_count}</strong>
             <span>Reportes pendientes</span>
           </div>
         </div>
       )}
 
-      <div className="profile-tabs">
+      <div className="segmented-control admin-segmented">
         {TABS.map((t) => (
-          <button key={t} className={`profile-tab ${tab === t ? "profile-tab-active" : ""}`} onClick={() => setTab(t)}>
+          <button key={t} className={`segmented-option ${tab === t ? "segmented-option-active" : ""}`} onClick={() => setTab(t)}>
             {t}
             {t === "Moderación" && pending.length > 0 && <span className="tab-count">{pending.length}</span>}
             {t === "Reportes" && reports.length > 0 && <span className="tab-count">{reports.length}</span>}

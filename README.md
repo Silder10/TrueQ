@@ -177,6 +177,13 @@ títulos + Inter para el resto. Todo el sistema de colores vive en
 paleta, ese es el único archivo que hay que tocar en la mayoría de los casos,
 porque el resto de los componentes usan `var(--algo)` en vez de colores fijos.
 
+## Estructura de navegación
+
+Los links más usados (Explorar, Publicar, Chats) están siempre visibles en la
+barra superior en desktop, y en la barra inferior en mobile. El botón ☰ solo
+guarda lo secundario: Favoritos, Historial, Configuración, y Administración
+(si sos admin).
+
 ## Pendiente / próximos pasos sugeridos
 
 - Rate limiting en `/api/auth/login` (Flask-Limiter).

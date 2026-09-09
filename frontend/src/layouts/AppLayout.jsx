@@ -64,11 +64,17 @@ export function AppLayout() {
 
           {user && (
             <>
-              <div className="app-location">
-                📍 {user.city || "Sin ubicación"}
-              </div>
+              <nav className="app-navbar">
+                {PRIMARY_LINKS.map(({ to, label, icon: Icon }) => (
+                  <NavLink key={to} to={to} className="app-navbar-link" end={to === "/exchanges"}>
+                    <Icon size={17} /> {label}
+                  </NavLink>
+                ))}
+              </nav>
 
               <div className="app-header-actions">
+                <div className="app-location">📍 {user.city || "Sin ubicación"}</div>
+
                 <NavLink to="/notifications" className="icon-btn notification-bell" aria-label="Notificaciones">
                   <Bell size={20} />
                   {unreadCount > 0 && (
@@ -78,7 +84,7 @@ export function AppLayout() {
                 <NavLink to={`/profile/${user.id}`} className="avatar-link">
                   <img src={uploadUrl(user.avatar)} alt="" className="avatar-thumb" />
                 </NavLink>
-                <button className="icon-btn" onClick={() => setMenuOpen(true)} aria-label="Menú">
+                <button className="icon-btn" onClick={() => setMenuOpen(true)} aria-label="Más opciones">
                   <Menu size={22} />
                 </button>
               </div>
@@ -98,22 +104,14 @@ export function AppLayout() {
             </div>
 
             <div className="drawer-section">
-              {PRIMARY_LINKS.map(({ to, label, icon: Icon }) => (
-                <NavLink key={to} to={to} className="drawer-link" onClick={() => setMenuOpen(false)}>
-                  <Icon size={18} /> {label}
-                </NavLink>
-              ))}
-            </div>
-
-            <div className="drawer-section">
+              <NavLink to={`/profile/${user?.id}`} className="drawer-link" onClick={() => setMenuOpen(false)}>
+                <User size={18} /> Mi perfil
+              </NavLink>
               {SECONDARY_LINKS.map(({ to, label, icon: Icon }) => (
                 <NavLink key={to} to={to} className="drawer-link" onClick={() => setMenuOpen(false)}>
                   <Icon size={18} /> {label}
                 </NavLink>
               ))}
-              <NavLink to={`/profile/${user?.id}`} className="drawer-link" onClick={() => setMenuOpen(false)}>
-                <User size={18} /> Mi perfil
-              </NavLink>
               {user?.role === "admin" && (
                 <NavLink to="/admin" className="drawer-link" onClick={() => setMenuOpen(false)}>
                   <Shield size={18} /> Administración

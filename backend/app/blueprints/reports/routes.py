@@ -7,6 +7,7 @@ from app.extensions import db
 from app.models import (
     Block,
     Exchange,
+    ModerationStatus,
     Report,
     ReportReason,
     ReportStatus,
@@ -131,8 +132,14 @@ def list_reports():
 def resolve_report(report_id):
     """
     Acciones posibles: 'advertencia', 'suspender', 'desestimar'.
-    'suspender' bloquea el login del usuario reportado (si el reporte es
-    sobre un usuario) hasta que otro admin lo reactive manualmente.
+
+    Sobre un USUARIO: 'suspender' bloquea su login (is_suspended=True) hasta
+    que otro admin lo reactive.
+
+    Sobre una PUBLICACIÓN: 'suspender' la retira del listado público
+    (moderation_status -> Rechazado), igual que un rechazo de moderación
+    normal. Antes esto no hacía nada — el reporte se marcaba resuelto pero
+    la publicación seguía visible, que era justo el bug reportado.
     """
     report = Report.query.get_or_404(report_id)
     data = request.get_json(silent=True) or {}
@@ -141,10 +148,16 @@ def resolve_report(report_id):
     if action not in {"advertencia", "suspender", "desestimar"}:
         return jsonify(error="Acción inválida."), 400
 
-    if action == "suspender" and report.target_type.value == "usuario":
-        target_user = User.query.get(report.target_id)
-        if target_user:
-            target_user.is_suspended = True
+    if action == "suspender":
+        if report.target_type.value == "usuario":
+            target_user = User.query.get(report.target_id)
+            if target_user:
+                target_user.is_suspended = True
+        else:  # publicacion
+            target_exchange = Exchange.query.get(report.target_id)
+            if target_exchange:
+                target_exchange.moderation_status = ModerationStatus.RECHAZADO
+                target_exchange.moderation_note = "Retirada tras un reporte de la comunidad."
 
     report.status = ReportStatus.REVISADO
     report.admin_action = action
