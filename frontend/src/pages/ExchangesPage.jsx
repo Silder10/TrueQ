@@ -40,43 +40,49 @@ export function ExchangesPage() {
 
   return (
     <div className="stack">
-      <div className="dashboard-greeting">
+      <section className="explore-hero">
         <h1>Hola, {user?.username} 👋</h1>
         <p>Encuentra intercambios que podrían interesarte.</p>
-      </div>
 
-      <div className="search-bar">
-        <Search size={20} />
-        <input
-          type="search"
-          placeholder="¿Qué estás buscando intercambiar?"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
+        <div className="search-bar">
+          <Search size={20} />
+          <input
+            type="search"
+            placeholder="¿Qué estás buscando intercambiar?"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
 
-      <div className="category-row">
-        <button
-          className={`chip ${category === "" ? "chip-active" : ""}`}
-          onClick={() => setCategory("")}
-        >
-          Todas
-        </button>
-        {CATEGORIES.map(({ value, icon: Icon }) => (
+        <div className="category-row">
           <button
-            key={value}
-            className={`chip ${category === value ? "chip-active" : ""}`}
-            onClick={() => setCategory(value)}
+            className={`chip ${category === "" ? "chip-active" : ""}`}
+            onClick={() => setCategory("")}
           >
-            <Icon size={15} /> {value}
+            Todas
           </button>
-        ))}
-        <button className={`chip ${nearby ? "chip-active" : ""}`} onClick={() => setNearby((v) => !v)}>
-          <MapPin size={15} /> Cerca de mí
-        </button>
-      </div>
+          {CATEGORIES.map(({ value, icon: Icon }) => (
+            <button
+              key={value}
+              className={`chip ${category === value ? "chip-active" : ""}`}
+              onClick={() => setCategory(value)}
+            >
+              <Icon size={15} /> {value}
+            </button>
+          ))}
+          <button className={`chip ${nearby ? "chip-active" : ""}`} onClick={() => setNearby((v) => !v)}>
+            <MapPin size={15} /> Cerca de mí
+          </button>
+        </div>
+      </section>
 
       {error && <div className="banner banner-error">{error}</div>}
+
+      {!loading && items.length > 0 && (
+        <h2 className="explore-results-title">
+          {category || "Todas las categorías"} · {items.length} publicación{items.length === 1 ? "" : "es"}
+        </h2>
+      )}
 
       {loading ? (
         <div className="exchanges-grid">

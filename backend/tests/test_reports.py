@@ -80,6 +80,49 @@ def test_admin_can_resolve_report_and_suspend_user(client, db):
     assert target.is_suspended is True
 
 
+def test_admin_suspending_reported_publication_actually_unpublishes_it(client, db):
+    """
+    Bug real reportado: 'suspender' un reporte sobre una PUBLICACIÓN no
+    hacía nada — el reporte se marcaba resuelto pero el post seguía visible.
+    """
+    register_user(client, username="owner", email="owner@example.com")
+    create = client.post(
+        "/api/exchanges",
+        data={"title": "Sospechosa", "offers": "x", "seeks": "y", "category": "Bienes"},
+    )
+    exchange_id = create.get_json()["exchange"]["id"]
+    exchange = Exchange.query.get(exchange_id)
+    exchange.moderation_status = ModerationStatus.APROBADO
+    db.session.commit()
+    client.post("/api/auth/logout")
+
+    register_user(client, username="reporter", email="reporter@example.com")
+    report = client.post(
+        "/api/reports",
+        json={"target_type": "publicacion", "target_id": exchange_id, "reason": "Fraude"},
+    ).get_json()["report"]
+    client.post("/api/auth/logout")
+
+    register_user(client, username="root", email="root@example.com")
+    _make_admin(db, "root@example.com")
+    client.post("/api/auth/logout")
+    client.post("/api/auth/login", json={"email": "root@example.com", "password": "clave1234"})
+
+    response = client.post(f"/api/admin/reports/{report['id']}/resolve", json={"action": "suspender"})
+    assert response.status_code == 200
+
+    exchange = Exchange.query.get(exchange_id)
+    assert exchange.moderation_status == ModerationStatus.RECHAZADO
+    assert exchange.moderation_note is not None
+
+    # la publicación ya no debe verse en el listado público para un usuario
+    # común (los admins sí ven todo, a propósito, para poder moderar)
+    client.post("/api/auth/logout")
+    register_user(client, username="viewer", email="viewer@example.com")
+    listing = client.get("/api/exchanges").get_json()
+    assert exchange_id not in [item["id"] for item in listing["items"]]
+
+
 def test_block_prevents_chat_message(client):
     register_user(client, username="blocker", email="blocker@example.com")
     blocker_id = client.get("/api/auth/me").get_json()["user"]["id"]
