@@ -3,6 +3,7 @@ from flask_login import current_user, login_required
 
 from app.extensions import db
 from app.models import ExchangeCategory, User
+from app.services.geolocation import valid_coordinates
 from app.services.uploads import InvalidImageError, save_image
 
 users_bp = Blueprint("users", __name__, url_prefix="/api/users")
@@ -51,11 +52,14 @@ def update_settings():
         current_user.city = city.strip() or None
 
     if latitude is not None and longitude is not None:
-        try:
-            current_user.latitude = float(latitude) if latitude else None
-            current_user.longitude = float(longitude) if longitude else None
-        except ValueError:
+        if latitude == "" and longitude == "":
+            current_user.latitude = None
+            current_user.longitude = None
+        elif not valid_coordinates(latitude, longitude):
             return jsonify(error="Coordenadas inválidas."), 400
+        else:
+            current_user.latitude = float(latitude)
+            current_user.longitude = float(longitude)
 
     if interests_raw is not None:
         interests = [i.strip() for i in interests_raw.split(",") if i.strip()]
