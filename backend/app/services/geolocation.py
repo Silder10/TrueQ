@@ -21,3 +21,18 @@ def distance_km(lat1, lon1, lat2, lon2):
     c = 2 * atan2(sqrt(a), sqrt(1 - a))
 
     return round(EARTH_RADIUS_KM * c, 1)
+
+
+def valid_coordinates(lat, lon):
+    """
+    RF07: valida que lat/lon sean números dentro del rango geográfico
+    real. Se usa tanto en registro como en edición de perfil, para no
+    guardar coordenadas basura (ej. lat=200) que romperían Haversine.
+    """
+    if lat is None or lon is None:
+        return False
+    try:
+        lat, lon = float(lat), float(lon)
+    except (TypeError, ValueError):
+        return False
+    return -90 <= lat <= 90 and -180 <= lon <= 180

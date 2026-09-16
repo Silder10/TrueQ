@@ -4,13 +4,19 @@ from flask import Blueprint, current_app, jsonify, request
 from flask_login import current_user, login_required
 
 from app.extensions import db
-from app.models import Exchange, ExchangeCategory, ExchangeRequest, ModerationStatus, RequestStatus
+from app.models import Exchange, ExchangeCategory, ExchangeRequest, ExchangeStatus, ModerationStatus, RequestStatus
 from app.services.geolocation import distance_km
 from app.services.notifications import notify
 from app.services.uploads import InvalidImageError, save_image
 from app.utils import paginated_response
 
 exchanges_bp = Blueprint("exchanges", __name__, url_prefix="/api/exchanges")
+
+# RF07: radio de búsqueda configurable, con límites razonables para no
+# dejar pasar un radio absurdo (ej. 0 km o 5000 km) por query string.
+DEFAULT_SEARCH_RADIUS_KM = 10
+MIN_SEARCH_RADIUS_KM = 1
+MAX_SEARCH_RADIUS_KM = 200
 
 
 def _exchange_with_distance(exchange):
@@ -31,6 +37,21 @@ def list_exchanges():
     owner_id = request.args.get("owner_id", "").strip()
     nearby = request.args.get("nearby", "").strip() == "true"
 
+    radius_km = DEFAULT_SEARCH_RADIUS_KM
+    if nearby:
+        radius_raw = request.args.get("radius_km", "").strip()
+        if radius_raw:
+            try:
+                radius_km = float(radius_raw)
+            except ValueError:
+                return jsonify(error="radius_km inválido."), 400
+        if not (MIN_SEARCH_RADIUS_KM <= radius_km <= MAX_SEARCH_RADIUS_KM):
+            return jsonify(
+                error=f"El radio debe estar entre {MIN_SEARCH_RADIUS_KM} y {MAX_SEARCH_RADIUS_KM} km."
+            ), 400
+        if current_user.latitude is None or current_user.longitude is None:
+            return jsonify(error="Necesitás activar tu ubicación para buscar cerca de ti."), 400
+
     query = Exchange.query
 
     # RF15: solo se listan publicaciones aprobadas por un admin, salvo que
@@ -43,6 +64,8 @@ def list_exchanges():
     else:
         query = query.filter_by(moderation_status=ModerationStatus.APROBADO)
 
+    # RF08: búsqueda combinada — título/descripción, categoría y (más abajo)
+    # distancia se aplican todos juntos sobre el mismo query, no por separado.
     if search:
         query = query.filter(
             db.or_(Exchange.title.ilike(f"%{search}%"), Exchange.description.ilike(f"%{search}%"))
@@ -60,18 +83,28 @@ def list_exchanges():
 
     query = query.order_by(Exchange.created_at.desc())
 
-    if nearby and current_user.latitude is not None:
-        # "Cerca de mí" no se puede ordenar en SQL sin extensiones geoespaciales,
-        # así que la ordenamos en memoria tras traer la página. Aceptable para
-        # el volumen de datos de este proyecto; si crece mucho, se movería a
-        # una columna geoespacial indexada (PostGIS/MySQL ST_Distance).
+    if nearby:
+        # "Cerca de mí" no se puede filtrar/ordenar en SQL sin extensiones
+        # geoespaciales, así que se resuelve en memoria tras aplicar los
+        # demás filtros. Aceptable para el volumen de datos de este
+        # proyecto; si crece mucho, se movería a una columna geoespacial
+        # indexada (PostGIS/MySQL ST_Distance).
         all_items = query.all()
         with_distance = [(_exchange_with_distance(e), e) for e in all_items]
-        with_distance.sort(
-            key=lambda pair: pair[0]["distance_km"] if pair[0]["distance_km"] is not None else float("inf")
+
+        # RF08: el radio ahora filtra de verdad (antes solo ordenaba y
+        # devolvía todos los resultados sin importar qué tan lejos estaban).
+        within_radius = [
+            pair for pair in with_distance
+            if pair[0]["distance_km"] is not None and pair[0]["distance_km"] <= radius_km
+        ]
+        within_radius.sort(key=lambda pair: pair[0]["distance_km"])
+
+        items = [d for d, _ in within_radius]
+        return jsonify(
+            items=items, total=len(items), page=1, pages=1, has_next=False, has_prev=False,
+            radius_km=radius_km,
         )
-        items = [d for d, _ in with_distance]
-        return jsonify(items=items, total=len(items), page=1, pages=1, has_next=False, has_prev=False)
 
     return paginated_response(query, _exchange_with_distance)
 
@@ -223,6 +256,9 @@ def request_exchange(exchange_id):
     if exchange.owner_id == current_user.id:
         return jsonify(error="No puedes solicitar tu propio intercambio."), 400
 
+    if exchange.status != ExchangeStatus.DISPONIBLE:
+        return jsonify(error="Este intercambio ya no está disponible."), 409
+
     existing = ExchangeRequest.query.filter_by(
         exchange_id=exchange.id, requester_id=current_user.id
     ).first()
@@ -257,6 +293,9 @@ def _resolve_request(request_id, new_status, success_message):
     if exchange_request.exchange.owner_id != current_user.id:
         return jsonify(error="Acceso no autorizado."), 403
 
+    if exchange_request.status != RequestStatus.PENDIENTE:
+        return jsonify(error="Esta solicitud ya fue resuelta."), 409
+
     exchange_request.status = new_status
     notify(
         exchange_request.requester_id,
@@ -270,7 +309,41 @@ def _resolve_request(request_id, new_status, success_message):
 @exchanges_bp.post("/requests/<int:request_id>/accept")
 @login_required
 def accept_request(request_id):
-    return _resolve_request(request_id, RequestStatus.ACEPTADA, "aceptada")
+    """
+    RF12: aceptar una solicitud mueve el intercambio a "En proceso" y
+    cierra automáticamente las demás solicitudes pendientes sobre esa
+    misma publicación (no tiene sentido dejarlas abiertas si el trueque
+    ya tiene contraparte).
+    """
+    exchange_request = ExchangeRequest.query.get_or_404(request_id)
+    exchange = exchange_request.exchange
+
+    if exchange.owner_id != current_user.id:
+        return jsonify(error="Acceso no autorizado."), 403
+
+    if exchange_request.status != RequestStatus.PENDIENTE:
+        return jsonify(error="Esta solicitud ya fue resuelta."), 409
+
+    if exchange.status != ExchangeStatus.DISPONIBLE:
+        return jsonify(error="Este intercambio ya no está disponible para aceptar solicitudes."), 409
+
+    exchange_request.status = RequestStatus.ACEPTADA
+    exchange.status = ExchangeStatus.EN_PROCESO
+
+    other_pending = ExchangeRequest.query.filter(
+        ExchangeRequest.exchange_id == exchange.id,
+        ExchangeRequest.id != exchange_request.id,
+        ExchangeRequest.status == RequestStatus.PENDIENTE,
+    ).all()
+    for other in other_pending:
+        other.status = RequestStatus.RECHAZADA
+        notify(other.requester_id, f'Tu solicitud para "{exchange.title}" fue rechazada.')
+
+    notify(exchange_request.requester_id, f'Tu solicitud para "{exchange.title}" fue aceptada.')
+
+    db.session.commit()
+
+    return jsonify(request=exchange_request.to_dict())
 
 
 @exchanges_bp.post("/requests/<int:request_id>/reject")
@@ -282,14 +355,49 @@ def reject_request(request_id):
 @exchanges_bp.post("/<int:exchange_id>/complete")
 @login_required
 def complete_exchange(exchange_id):
-    from app.models import ExchangeStatus
-
     exchange = Exchange.query.get_or_404(exchange_id)
 
     if exchange.owner_id != current_user.id:
         return jsonify(error="Solo el dueño puede marcar el intercambio como completado."), 403
 
+    if exchange.status != ExchangeStatus.EN_PROCESO:
+        return jsonify(error="Solo se puede completar un intercambio que está en proceso."), 409
+
     exchange.status = ExchangeStatus.COMPLETADO
+    db.session.commit()
+
+    return jsonify(exchange=exchange.to_dict())
+
+
+@exchanges_bp.post("/<int:exchange_id>/cancel")
+@login_required
+def cancel_exchange(exchange_id):
+    """
+    RF12: el dueño o la persona con la solicitud aceptada pueden cancelar
+    el intercambio, solo mientras está "En proceso" (antes de aceptar una
+    solicitud no hay contraparte comprometida que cancelar; después de
+    "Completado" ya no aplica).
+    """
+    exchange = Exchange.query.get_or_404(exchange_id)
+
+    accepted_request = ExchangeRequest.query.filter_by(
+        exchange_id=exchange.id, status=RequestStatus.ACEPTADA
+    ).first()
+
+    is_owner = exchange.owner_id == current_user.id
+    is_accepted_requester = bool(accepted_request) and accepted_request.requester_id == current_user.id
+
+    if not (is_owner or is_accepted_requester):
+        return jsonify(error="Acceso no autorizado."), 403
+
+    if exchange.status != ExchangeStatus.EN_PROCESO:
+        return jsonify(error="Solo se puede cancelar un intercambio que está en proceso."), 409
+
+    exchange.status = ExchangeStatus.CANCELADO
+
+    other_party_id = accepted_request.requester_id if is_owner else exchange.owner_id
+    notify(other_party_id, f'El intercambio "{exchange.title}" fue cancelado.')
+
     db.session.commit()
 
     return jsonify(exchange=exchange.to_dict())
@@ -304,8 +412,6 @@ def history():
     usuario actual participó, ya sea como dueño de la publicación o como
     solicitante con una solicitud aceptada.
     """
-    from app.models import ExchangeStatus
-
     owned_completed = Exchange.query.filter_by(
         owner_id=current_user.id, status=ExchangeStatus.COMPLETADO
     ).all()
