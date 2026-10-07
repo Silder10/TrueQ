@@ -28,9 +28,6 @@ class Exchange(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(120), nullable=False)
-
-    # "Ofrece" / "Busca" son los campos cortos que se muestran en la tarjeta;
-    # description queda para el detalle largo (opcional).
     offers = db.Column(db.String(200), nullable=False)
     seeks = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
@@ -46,17 +43,12 @@ class Exchange(db.Model):
         default=ExchangeStatus.DISPONIBLE,
         nullable=False,
     )
-
-    # RF15: toda publicación nace Pendiente y no aparece en el listado
-    # público hasta que un admin la apruebe. Editarla la vuelve a mandar
-    # a revisión (ver update_exchange).
     moderation_status = db.Column(
         db.Enum(ModerationStatus, values_callable=lambda enum_cls: [e.value for e in enum_cls]),
         default=ModerationStatus.PENDIENTE,
         nullable=False,
     )
-    moderation_note = db.Column(db.String(255))  # motivo si fue rechazada
-
+    moderation_note = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     owner_id = db.Column(
@@ -66,22 +58,20 @@ class Exchange(db.Model):
     )
 
     requests = db.relationship(
-        "ExchangeRequest",
-        backref="exchange",
-        lazy=True,
-        cascade="all, delete-orphan",
+        "ExchangeRequest", backref="exchange", lazy=True, cascade="all, delete-orphan"
     )
     favorited_by = db.relationship(
-        "Favorite",
-        backref="exchange",
-        lazy=True,
-        cascade="all, delete-orphan",
+        "Favorite", backref="exchange", lazy=True, cascade="all, delete-orphan"
     )
     reviews = db.relationship(
-        "Review",
+        "Review", backref="exchange", lazy=True, cascade="all, delete-orphan"
+    )
+    images = db.relationship(
+        "ExchangeImage",
         backref="exchange",
         lazy=True,
         cascade="all, delete-orphan",
+        order_by="ExchangeImage.position",
     )
 
     def to_dict(self, include_owner=True):
@@ -93,6 +83,7 @@ class Exchange(db.Model):
             "description": self.description,
             "category": self.category.value if self.category else None,
             "image": self.image,
+            "images": [image.to_dict() for image in self.images],
             "status": self.status.value if self.status else None,
             "moderation_status": self.moderation_status.value if self.moderation_status else None,
             "moderation_note": self.moderation_note,
