@@ -7,6 +7,12 @@ class Message(db.Model):
     __tablename__ = "messages"
 
     id = db.Column(db.Integer, primary_key=True)
+    conversation_id = db.Column(
+        db.Integer,
+        db.ForeignKey("conversations.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
     sender_id = db.Column(
         db.Integer,
         db.ForeignKey("users.id", ondelete="CASCADE"),
@@ -18,7 +24,7 @@ class Message(db.Model):
         nullable=False,
     )
     content = db.Column(db.Text)
-    image = db.Column(db.String(255))  # evidencia opcional (RF09)
+    image = db.Column(db.String(255))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     sender = db.relationship(
@@ -35,6 +41,7 @@ class Message(db.Model):
     def to_dict(self):
         return {
             "id": self.id,
+            "conversation_id": self.conversation_id,
             "sender_id": self.sender_id,
             "receiver_id": self.receiver_id,
             "content": self.content,
