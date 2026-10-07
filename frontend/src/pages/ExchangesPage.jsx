@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Package, Search, Wrench, Boxes, MapPin } from "lucide-react";
+import { Package, Search, Wrench, Boxes, MapPin, Plus } from "lucide-react";
 import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { ExchangeCard } from "../components/ExchangeCard";
@@ -48,9 +48,14 @@ export function ExchangesPage() {
   return (
     <div className="stack">
       <section className="explore-hero">
-        <h1>Hola, {user?.username} 👋</h1>
-        <p>Encuentra intercambios que podrían interesarte.</p>
-
+        <div className="explore-hero-copy">
+          <div>
+            <span className="explore-eyebrow">TrueQ · Intercambios</span>
+            <h1>Hola, {user?.username} 👋</h1>
+            <p>Encuentra algo que necesitas o descubre quién puede necesitar lo que tú tienes.</p>
+          </div>
+          <a className="explore-publish-btn" href="/create-exchange"><Plus size={17} /> Publicar intercambio</a>
+        </div>
         <div className="search-bar">
           <Search size={20} />
           <input
