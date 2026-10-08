@@ -1,4 +1,8 @@
-const API_BASE = import.meta.env.VITE_API_URL || "";
+// En desarrollo siempre usamos el mismo origen del frontend y Vite hace proxy
+// de /api y /static hacia Flask. Así no dependemos de localhost, de la IP
+// del equipo ni de un puerto escrito manualmente en el navegador.
+// En producción, VITE_API_URL permite separar frontend y backend si hace falta.
+const API_BASE = import.meta.env.DEV ? "" : (import.meta.env.VITE_API_URL || "");
 
 let csrfToken = null;
 let csrfTokenPromise = null;
