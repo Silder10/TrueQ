@@ -1,19 +1,15 @@
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+// Por defecto usamos el mismo origen del frontend y Vite hace proxy de
+// /api y /static hacia Flask. En producción se puede definir VITE_API_URL
+// con el origen público del backend si frontend y backend están separados.
+const API_BASE = import.meta.env.VITE_API_URL || "";
 
 let csrfToken = null;
 let csrfTokenPromise = null;
 
-/**
- * Auth por cookie de sesión (Flask-Login), no JWT: el navegador maneja la
- * cookie sola gracias a credentials:'include'. Lo único que hay que llevar
- * a mano es el token CSRF, que se pide una vez y se reenvía en el header
- * X-CSRFToken en cada POST/PUT/DELETE — es el equivalente SPA del
- * {{ form.hidden_tag() }} que usaban las plantillas server-rendered.
- */
 async function getCsrfToken() {
   if (csrfToken) return csrfToken;
   if (!csrfTokenPromise) {
-    csrfTokenPromise = fetch(`${API_BASE}/api/auth/csrf`, { credentials: "include" })
+    csrfTokenPromise = fetch(\`${API_BASE}/api/auth/csrf\`, { credentials: "include" })
       .then((res) => res.json())
       .then((data) => {
         csrfToken = data.csrf_token;
@@ -43,7 +39,7 @@ async function request(path, { method = "GET", body, isFormData = false } = {}) 
     headers["X-CSRFToken"] = await getCsrfToken();
   }
 
-  const response = await fetch(`${API_BASE}${path}`, {
+  const response = await fetch(\`${API_BASE}${path}\`, {
     method,
     headers,
     body: finalBody,
@@ -77,5 +73,5 @@ export const api = {
 };
 
 export function uploadUrl(filename) {
-  return `${API_BASE}/static/uploads/${filename}`;
+  return \`${API_BASE}/static/uploads/${filename}\`;
 }
