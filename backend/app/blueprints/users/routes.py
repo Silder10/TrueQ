@@ -17,7 +17,7 @@ def get_profile(user_id):
     if user.is_private and user.id != current_user.id:
         return jsonify(user=user.to_dict()), 200  # perfil visible pero sin datos sensibles
 
-    return jsonify(user=user.to_dict(include_email=(user.id == current_user.id)))
+    return jsonify(user=user.to_dict(include_email=(user.id == current_user.id), include_location=(user.id == current_user.id)))
 
 
 @users_bp.put("/me")
@@ -85,4 +85,4 @@ def update_settings():
 
     db.session.commit()
 
-    return jsonify(user=current_user.to_dict(include_email=True))
+    return jsonify(user=current_user.to_dict(include_email=True, include_location=True))

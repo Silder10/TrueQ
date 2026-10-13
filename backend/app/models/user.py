@@ -88,7 +88,7 @@ class User(UserMixin, db.Model):
     def reviews_count(self):
         return len(self.reviews_received)
 
-    def to_dict(self, include_email=False):
+    def to_dict(self, include_email=False, include_location=False):
         data = {
             "id": self.id,
             "username": self.username,
@@ -98,8 +98,6 @@ class User(UserMixin, db.Model):
             "is_private": self.is_private,
             "is_suspended": self.is_suspended,
             "city": self.city,
-            "latitude": self.latitude,
-            "longitude": self.longitude,
             "interests": self.interests or [],
             "average_rating": self.average_rating,
             "reviews_count": self.reviews_count,
@@ -108,4 +106,9 @@ class User(UserMixin, db.Model):
         if include_email:
             data["email"] = self.email
             data["phone"] = self.phone
+        # Las coordenadas exactas son datos sensibles: solo se incluyen
+        # en respuestas explícitamente destinadas al propio usuario.
+        if include_location:
+            data["latitude"] = self.latitude
+            data["longitude"] = self.longitude
         return data
