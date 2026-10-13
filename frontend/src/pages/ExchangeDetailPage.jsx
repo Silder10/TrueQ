@@ -78,6 +78,7 @@ export function ExchangeDetailPage() {
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [activeImage, setActiveImage] = useState(null);
@@ -122,6 +123,7 @@ export function ExchangeDetailPage() {
   const handleComplete = async () => {
     setCompleting(true);
     setError(null);
+    setError(null);
     try {
       const data = await api.post(`/api/exchanges/${id}/complete`);
       setExchange(data.exchange);
@@ -129,6 +131,20 @@ export function ExchangeDetailPage() {
       setError(err.message);
     } finally {
       setCompleting(false);
+    }
+  };
+
+  const handleCancel = async () => {
+    if (!confirm("¿Cancelar este intercambio? No se puede deshacer.")) return;
+    setCancelling(true);
+    setError(null);
+    try {
+      const data = await api.post(`/api/exchanges/${id}/cancel`);
+      setExchange(data.exchange);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -322,6 +338,15 @@ export function ExchangeDetailPage() {
                     {cancelling ? <span className="spinner" /> : <><XCircle size={16} /> Cancelar intercambio</>}
                   </button>
                 </>
+              {exchange.status === "En proceso" && (
+                <>
+                  <button className="btn btn-outline" onClick={handleComplete} disabled={completing}>
+                    {completing ? <span className="spinner" /> : <><CheckCircle size={16} /> Marcar como completado</>}
+                  </button>
+                  <button className="btn btn-outline" onClick={handleCancel} disabled={cancelling}>
+                    {cancelling ? <span className="spinner" /> : <><XCircle size={16} /> Cancelar intercambio</>}
+                  </button>
+                </>
               )}
               <button className="btn btn-outline" onClick={() => navigate(`/exchanges/${id}/edit`)}>
                 <Pencil size={16} /> Editar
@@ -332,6 +357,34 @@ export function ExchangeDetailPage() {
             </div>
           ) : (
             <div className="exchange-detail-actions">
+              {exchange.status === "Completado" && (
+                <div className="banner banner-success">Este intercambio ya fue completado.</div>
+              )}
+              {exchange.status === "Cancelado" && (
+                <div className="banner banner-error">Este intercambio fue cancelado.</div>
+              )}
+              {exchange.status === "En proceso" && (
+                <>
+                  <div className="banner">Este intercambio ya tiene una solicitud aceptada y está en proceso.</div>
+                  <button className="btn btn-outline" onClick={handleCancel} disabled={cancelling}>
+                    {cancelling ? <span className="spinner" /> : <><XCircle size={16} /> Cancelar intercambio</>}
+                  </button>
+                </>
+              )}
+              {exchange.status === "Disponible" && (
+                requestState === "sent" ? (
+                  <div className="banner banner-success">Solicitud enviada — seguí la charla en Mensajes.</div>
+                ) : (
+                  <button className="btn btn-primary" onClick={handleRequest} disabled={requestState === "sending"}>
+                    {requestState === "sending" ? (
+                      <span className="spinner" />
+                    ) : (
+                      <>
+                        <Repeat size={17} /> Solicitar intercambio
+                      </>
+                    )}
+                  </button>
+                )
               {exchange.status === "Completado" && (
                 <div className="banner banner-success">Este intercambio ya fue completado.</div>
               )}
