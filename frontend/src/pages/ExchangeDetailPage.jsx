@@ -122,6 +122,7 @@ export function ExchangeDetailPage() {
   const handleComplete = async () => {
     setCompleting(true);
     setError(null);
+    setError(null);
     try {
       const data = await api.post(`/api/exchanges/${id}/complete`);
       setExchange(data.exchange);

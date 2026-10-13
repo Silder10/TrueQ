@@ -4,8 +4,7 @@ from app.extensions import db
 
 
 class Block(db.Model):
-    """Un usuario bloquea a otro para sí mismo: no puede mandarle mensajes,
-    solicitar intercambios ni ver este perfil bloqueado como antes."""
+    """Un usuario bloquea a otro usuario."""
 
     __tablename__ = "blocks"
     __table_args__ = (
@@ -19,8 +18,7 @@ class Block(db.Model):
 
 
 class MutedConversation(db.Model):
-    """Silenciar una conversación: seguís pudiendo chatear, pero no te
-    generamos notificación por mensajes nuevos de esa persona."""
+    """Silenciado por usuario; conversation_id permite normalizar la relación."""
 
     __tablename__ = "muted_conversations"
     __table_args__ = (
@@ -30,4 +28,12 @@ class MutedConversation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     other_user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    conversation_id = db.Column(
+        db.Integer,
+        db.ForeignKey("conversations.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    conversation = db.relationship("Conversation")

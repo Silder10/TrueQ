@@ -7,6 +7,7 @@ from flask_wtf.csrf import generate_csrf
 
 from app.extensions import db
 from app.models import ExchangeCategory, User
+from app.services.geolocation import valid_coordinates
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
@@ -54,6 +55,12 @@ def register():
     if not isinstance(interests, list) or any(i not in valid_categories for i in interests):
         errors["interests"] = "Selección de intereses inválida."
 
+    # RF07: si viene ubicación, tiene que ser una coordenada real (evita
+    # guardar basura como lat=200 que rompería el cálculo de distancia).
+    has_location = latitude is not None or longitude is not None
+    if has_location and not valid_coordinates(latitude, longitude):
+        errors["location"] = "Coordenadas inválidas."
+
     if errors:
         return jsonify(error="Datos inválidos.", fields=errors), 400
 
@@ -68,8 +75,8 @@ def register():
 
     user = User(
         username=username, email=email, phone=phone, city=city, interests=interests,
-        latitude=latitude if isinstance(latitude, (int, float)) else None,
-        longitude=longitude if isinstance(longitude, (int, float)) else None,
+        latitude=float(latitude) if has_location else None,
+        longitude=float(longitude) if has_location else None,
     )
     user.set_password(password)
 
