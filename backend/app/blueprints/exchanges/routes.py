@@ -16,7 +16,6 @@ from app.models import (
     Transaction,
     TransactionStatus,
 )
-from app.models import Exchange, ExchangeCategory, ExchangeRequest, ExchangeStatus, ModerationStatus, RequestStatus
 from app.services.geolocation import distance_km
 from app.services.notifications import notify
 from app.services.uploads import InvalidImageError, save_image
