@@ -85,7 +85,7 @@ def register():
 
     login_user(user)
 
-    return jsonify(user=user.to_dict(include_email=True)), 201
+    return jsonify(user=user.to_dict(include_email=True, include_location=True)), 201
 
 
 @auth_bp.post("/login")
@@ -107,7 +107,7 @@ def login():
 
     login_user(user, remember=bool(data.get("remember")))
 
-    return jsonify(user=user.to_dict(include_email=True))
+    return jsonify(user=user.to_dict(include_email=True, include_location=True))
 
 
 @auth_bp.post("/logout")
@@ -121,7 +121,7 @@ def logout():
 def me():
     if not current_user.is_authenticated:
         return jsonify(user=None), 200
-    return jsonify(user=current_user.to_dict(include_email=True))
+    return jsonify(user=current_user.to_dict(include_email=True, include_location=True))
 
 
 @auth_bp.post("/forgot-password")
