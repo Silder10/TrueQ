@@ -132,14 +132,11 @@ def list_reports():
 def resolve_report(report_id):
     """
     Acciones posibles: 'advertencia', 'suspender', 'desestimar'.
-
-    Sobre un USUARIO: 'suspender' bloquea su login (is_suspended=True) hasta
-    que otro admin lo reactive.
-
-    Sobre una PUBLICACIÓN: 'suspender' la retira del listado público
-    (moderation_status -> Rechazado), igual que un rechazo de moderación
-    normal. Antes esto no hacía nada — el reporte se marcaba resuelto pero
-    la publicación seguía visible, que era justo el bug reportado.
+    
+    - 'advertencia' o 'suspender' implican que el reporte era válido, 
+      por lo que el estado del reporte pasa a 'Aprobada'.
+    - 'desestimar' implica que el reporte no procede, 
+      por lo que el estado del reporte pasa a 'Rechazada'.
     """
     report = Report.query.get_or_404(report_id)
     data = request.get_json(silent=True) or {}
@@ -159,7 +156,12 @@ def resolve_report(report_id):
                 target_exchange.moderation_status = ModerationStatus.RECHAZADO
                 target_exchange.moderation_note = "Retirada tras un reporte de la comunidad."
 
-    report.status = ReportStatus.REVISADO
+    # Asignar el estado del reporte según la decisión del administrador
+    if action == "desestimar":
+        report.status = ReportStatus.RECHAZADA
+    else:
+        report.status = ReportStatus.APROBADA
+
     report.admin_action = action
     report.resolved_at = datetime.utcnow()
     db.session.commit()

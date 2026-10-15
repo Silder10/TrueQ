@@ -181,6 +181,24 @@ def create_exchange():
     if not seeks:
         errors["seeks"] = "Contá qué buscas a cambio."
 
+    # NUEVO: Filtro básico de contenido ofensivo
+    palabras_prohibidas = ["spam_malicioso", "ofensivo_ejemplo"] # Agrega las palabras que necesites filtrar
+    texto_completo = f"{title} {offers} {seeks} {description}".lower()
+    
+    for palabra in palabras_prohibidas:
+        if palabra in texto_completo:
+            errors["title"] = "El texto contiene palabras no permitidas por las normas de la comunidad."
+            break
+
+    # NUEVO: Filtro de publicaciones duplicadas del mismo usuario
+    if title:
+        duplicado_existente = Exchange.query.filter_by(
+            owner_id=current_user.id, 
+            title=title
+        ).first()
+        if duplicado_existente:
+            errors["title"] = "Ya tenés una publicación creada con este mismo título."
+
     category_enum = None
     if not category_raw:
         errors["category"] = "Elegí un tipo de intercambio."

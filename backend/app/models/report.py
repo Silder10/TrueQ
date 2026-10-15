@@ -21,7 +21,7 @@ class ReportReason(str, enum.Enum):
 class ReportStatus(str, enum.Enum):
     PENDIENTE = "Pendiente"
     REVISADO = "Revisado"
-
+    RECHAZADA = "Rechazada"
 
 class Report(db.Model):
     __tablename__ = "reports"
