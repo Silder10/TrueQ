@@ -355,28 +355,22 @@ def test_owner_can_complete_exchange(client, db):
     (con una solicitud aceptada), no directo desde "Disponible".
     """
     register_user(client, username="owner", email="owner@example.com")
-    """
-    RF12: solo se puede completar un intercambio que ya está "En proceso"
-    (con una solicitud aceptada), no directo desde "Disponible".
-    """
-    register_user(client, username="owner", email="owner@example.com")
     exchange_id = _create_and_approve(client, db, title="Para completar")
     client.post("/api/auth/logout")
 
     register_user(client, username="requester", email="requester@example.com")
-    request_id = client.post(f"/api/exchanges/{exchange_id}/request").get_json()["request"]["id"]
+    request_response = client.post(
+        f"/api/exchanges/{exchange_id}/request"
+    )
+    assert request_response.status_code == 201
+    request_id = request_response.get_json()["request"]["id"]
     client.post("/api/auth/logout")
 
     login_user(client, email="owner@example.com")
-    client.post(f"/api/exchanges/requests/{request_id}/accept")
-    client.post("/api/auth/logout")
-
-    register_user(client, username="requester", email="requester@example.com")
-    request_id = client.post(f"/api/exchanges/{exchange_id}/request").get_json()["request"]["id"]
-    client.post("/api/auth/logout")
-
-    login_user(client, email="owner@example.com")
-    client.post(f"/api/exchanges/requests/{request_id}/accept")
+    accept_response = client.post(
+        f"/api/exchanges/requests/{request_id}/accept"
+    )
+    assert accept_response.status_code == 200
 
     response = client.post(f"/api/exchanges/{exchange_id}/complete")
     assert response.status_code == 200
@@ -631,29 +625,33 @@ def test_non_owner_cannot_delete_exchange(client, db):
 def test_history_shows_only_completed_exchanges(client, db):
     register_user(client, username="owner", email="owner@example.com")
     completed_id = _create_and_approve(client, db, title="Completado")
-    pending_id = _create_and_approve(client, db, title="Todavía pendiente")
+    _create_and_approve(client, db, title="Todavía pendiente")
     client.post("/api/auth/logout")
 
     register_user(client, username="requester", email="requester@example.com")
-    request_id = client.post(f"/api/exchanges/{completed_id}/request").get_json()["request"]["id"]
+    request_response = client.post(
+        f"/api/exchanges/{completed_id}/request"
+    )
+    assert request_response.status_code == 201
+    request_id = request_response.get_json()["request"]["id"]
     client.post("/api/auth/logout")
 
     login_user(client, email="owner@example.com")
-    client.post(f"/api/exchanges/requests/{request_id}/accept")
-    client.post("/api/auth/logout")
+    accept_response = client.post(
+        f"/api/exchanges/requests/{request_id}/accept"
+    )
+    assert accept_response.status_code == 200
 
-    register_user(client, username="requester", email="requester@example.com")
-    request_id = client.post(f"/api/exchanges/{completed_id}/request").get_json()["request"]["id"]
-    client.post("/api/auth/logout")
-
-    login_user(client, email="owner@example.com")
-    client.post(f"/api/exchanges/requests/{request_id}/accept")
-    client.post(f"/api/exchanges/{completed_id}/complete")
+    complete_response = client.post(
+        f"/api/exchanges/{completed_id}/complete"
+    )
+    assert complete_response.status_code == 200
 
     response = client.get("/api/exchanges/history")
+    assert response.status_code == 200
     items = response.get_json()["items"]
 
-    titles = [i["title"] for i in items]
+    titles = [item["title"] for item in items]
     assert "Completado" in titles
     assert "Todavía pendiente" not in titles
 

@@ -30,6 +30,7 @@ def create_report():
     description = (data.get("description") or "").strip() or None
 
     errors = {}
+
     try:
         target_type = ReportTargetType(target_type_raw)
     except ValueError:
@@ -45,7 +46,7 @@ def create_report():
     if reason == ReportReason.OTRO and not description:
         errors["description"] = "Contanos el motivo si elegís 'Otro'."
 
-    if not isinstance(target_id, int):
+    if not isinstance(target_id, int) or isinstance(target_id, bool):
         errors["target_id"] = "target_id inválido."
 
     if errors:
@@ -53,12 +54,14 @@ def create_report():
 
     # Confirmar que el objetivo existe.
     if target_type == ReportTargetType.USUARIO:
-        if not User.query.get(target_id):
+        if db.session.get(User, target_id) is None:
             return jsonify(error="El usuario reportado no existe."), 404
+
         if target_id == current_user.id:
             return jsonify(error="No podés reportarte a ti mismo."), 400
+
     else:
-        if not Exchange.query.get(target_id):
+        if db.session.get(Exchange, target_id) is None:
             return jsonify(error="La publicación reportada no existe."), 404
 
     report = Report(
@@ -68,6 +71,7 @@ def create_report():
         reason=reason,
         description=description,
     )
+
     db.session.add(report)
     db.session.commit()
 
@@ -80,33 +84,58 @@ def block_user(user_id):
     if user_id == current_user.id:
         return jsonify(error="No podés bloquearte a ti mismo."), 400
 
-    target = User.query.get_or_404(user_id)
+    target = db.session.get(User, user_id)
 
-    existing = Block.query.filter_by(blocker_id=current_user.id, blocked_id=target.id).first()
+    if target is None:
+        return jsonify(error="Usuario no encontrado."), 404
+
+    existing = Block.query.filter_by(
+        blocker_id=current_user.id,
+        blocked_id=target.id,
+    ).first()
+
     if existing:
         return jsonify(message="Ya tenías bloqueado a este usuario."), 200
 
-    db.session.add(Block(blocker_id=current_user.id, blocked_id=target.id))
+    db.session.add(
+        Block(
+            blocker_id=current_user.id,
+            blocked_id=target.id,
+        )
+    )
     db.session.commit()
+
     return jsonify(message="Usuario bloqueado."), 201
 
 
 @reports_bp.delete("/users/<int:user_id>/block")
 @login_required
 def unblock_user(user_id):
-    block = Block.query.filter_by(blocker_id=current_user.id, blocked_id=user_id).first()
+    block = Block.query.filter_by(
+        blocker_id=current_user.id,
+        blocked_id=user_id,
+    ).first()
+
     if block:
         db.session.delete(block)
         db.session.commit()
+
     return jsonify(message="Usuario desbloqueado.")
 
 
 @reports_bp.get("/users/blocked")
 @login_required
 def list_blocked():
-    blocks = Block.query.filter_by(blocker_id=current_user.id).all()
-    users = [User.query.get(b.blocked_id) for b in blocks]
-    return jsonify(items=[u.to_dict() for u in users if u])
+    blocks = Block.query.filter_by(
+        blocker_id=current_user.id
+    ).all()
+
+    users = [
+        db.session.get(User, block.blocked_id)
+        for block in blocks
+    ]
+
+    return jsonify(items=[user.to_dict() for user in users if user])
 
 
 # --- Administración (RF05) ---
@@ -117,13 +146,16 @@ def list_blocked():
 def list_reports():
     status_filter = request.args.get("status", "").strip()
     query = Report.query
+
     if status_filter:
         try:
             query = query.filter_by(status=ReportStatus(status_filter))
         except ValueError:
             return jsonify(error="Estado inválido."), 400
+
     query = query.order_by(Report.created_at.desc())
-    return paginated_response(query, lambda r: r.to_dict())
+
+    return paginated_response(query, lambda report: report.to_dict())
 
 
 @reports_bp.post("/admin/reports/<int:report_id>/resolve")
@@ -138,10 +170,13 @@ def resolve_report(report_id):
 
     Sobre una PUBLICACIÓN: 'suspender' la retira del listado público
     (moderation_status -> Rechazado), igual que un rechazo de moderación
-    normal. Antes esto no hacía nada — el reporte se marcaba resuelto pero
-    la publicación seguía visible, que era justo el bug reportado.
+    normal.
     """
-    report = Report.query.get_or_404(report_id)
+    report = db.session.get(Report, report_id)
+
+    if report is None:
+        return jsonify(error="Reporte no encontrado."), 404
+
     data = request.get_json(silent=True) or {}
     action = (data.get("action") or "").strip()
 
@@ -150,18 +185,24 @@ def resolve_report(report_id):
 
     if action == "suspender":
         if report.target_type.value == "usuario":
-            target_user = User.query.get(report.target_id)
+            target_user = db.session.get(User, report.target_id)
+
             if target_user:
                 target_user.is_suspended = True
+
         else:  # publicacion
-            target_exchange = Exchange.query.get(report.target_id)
+            target_exchange = db.session.get(Exchange, report.target_id)
+
             if target_exchange:
                 target_exchange.moderation_status = ModerationStatus.RECHAZADO
-                target_exchange.moderation_note = "Retirada tras un reporte de la comunidad."
+                target_exchange.moderation_note = (
+                    "Retirada tras un reporte de la comunidad."
+                )
 
     report.status = ReportStatus.REVISADO
     report.admin_action = action
     report.resolved_at = datetime.utcnow()
+
     db.session.commit()
 
     return jsonify(report=report.to_dict())
@@ -171,7 +212,12 @@ def resolve_report(report_id):
 @login_required
 @admin_required
 def unsuspend_user(user_id):
-    user = User.query.get_or_404(user_id)
+    user = db.session.get(User, user_id)
+
+    if user is None:
+        return jsonify(error="Usuario no encontrado."), 404
+
     user.is_suspended = False
     db.session.commit()
+
     return jsonify(user=user.to_dict(include_email=True))

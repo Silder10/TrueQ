@@ -33,21 +33,34 @@ class Exchange(db.Model):
     description = db.Column(db.Text)
 
     category = db.Column(
-        db.Enum(ExchangeCategory, values_callable=lambda enum_cls: [e.value for e in enum_cls]),
+        db.Enum(
+            ExchangeCategory,
+            values_callable=lambda enum_cls: [e.value for e in enum_cls],
+        ),
         nullable=False,
         default=ExchangeCategory.BIENES,
     )
+
     image = db.Column(db.String(255), default="exchange.png")
+
     status = db.Column(
-        db.Enum(ExchangeStatus, values_callable=lambda enum_cls: [e.value for e in enum_cls]),
+        db.Enum(
+            ExchangeStatus,
+            values_callable=lambda enum_cls: [e.value for e in enum_cls],
+        ),
         default=ExchangeStatus.DISPONIBLE,
         nullable=False,
     )
+
     moderation_status = db.Column(
-        db.Enum(ModerationStatus, values_callable=lambda enum_cls: [e.value for e in enum_cls]),
+        db.Enum(
+            ModerationStatus,
+            values_callable=lambda enum_cls: [e.value for e in enum_cls],
+        ),
         default=ModerationStatus.PENDIENTE,
         nullable=False,
     )
+
     moderation_note = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -58,27 +71,33 @@ class Exchange(db.Model):
     )
 
     requests = db.relationship(
-        "ExchangeRequest", backref="exchange", lazy=True, cascade="all, delete-orphan"
+        "ExchangeRequest",
+        backref="exchange",
+        lazy=True,
+        cascade="all, delete-orphan",
     )
+
     favorited_by = db.relationship(
         "Favorite",
         backref="exchange",
         lazy=True,
         cascade="all, delete-orphan",
     )
-    reviews = db.relationship(
-        "Review",
-        backref="exchange",
-        lazy=True,
-        cascade="all, delete-orphan",
-        order_by="ExchangeImage.position",
-    )
+
     images = db.relationship(
         "ExchangeImage",
         backref="exchange",
         lazy=True,
         cascade="all, delete-orphan",
         order_by="ExchangeImage.position",
+    )
+
+    reviews = db.relationship(
+        "Review",
+        backref="exchange",
+        lazy=True,
+        cascade="all, delete-orphan",
+        order_by="Review.created_at",
     )
 
     def to_dict(self, include_owner=True):
@@ -92,11 +111,17 @@ class Exchange(db.Model):
             "image": self.image,
             "images": [img.to_dict() for img in self.images],
             "status": self.status.value if self.status else None,
-            "moderation_status": self.moderation_status.value if self.moderation_status else None,
+            "moderation_status": (
+                self.moderation_status.value if self.moderation_status else None
+            ),
             "moderation_note": self.moderation_note,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "created_at": (
+                self.created_at.isoformat() if self.created_at else None
+            ),
             "owner_id": self.owner_id,
         }
+
         if include_owner and self.owner:
             data["owner"] = self.owner.to_dict()
+
         return data

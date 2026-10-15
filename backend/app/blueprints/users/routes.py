@@ -12,10 +12,10 @@ users_bp = Blueprint("users", __name__, url_prefix="/api/users")
 @users_bp.get("/<int:user_id>")
 @login_required
 def get_profile(user_id):
-    user = User.query.get_or_404(user_id)
+    user = db.get_or_404(User, user_id)
 
     if user.is_private and user.id != current_user.id:
-        return jsonify(user=user.to_dict()), 200  # perfil visible pero sin datos sensibles
+        return jsonify(user=user.to_dict()), 200  # Perfil visible sin datos sensibles.
 
     return jsonify(user=user.to_dict(include_email=(user.id == current_user.id)))
 
@@ -34,15 +34,25 @@ def update_settings():
     interests_raw = request.form.get("interests")  # CSV: "Materiales,Bienes"
 
     if username:
-        existing = User.query.filter(User.username == username, User.id != current_user.id).first()
+        existing = User.query.filter(
+            User.username == username,
+            User.id != current_user.id,
+        ).first()
+
         if existing:
             return jsonify(error="Ese nombre de usuario ya está en uso."), 409
+
         current_user.username = username
 
     if email:
-        existing = User.query.filter(User.email == email, User.id != current_user.id).first()
+        existing = User.query.filter(
+            User.email == email,
+            User.id != current_user.id,
+        ).first()
+
         if existing:
             return jsonify(error="Ese correo ya está en uso."), 409
+
         current_user.email = email
 
     if bio is not None:
@@ -55,32 +65,48 @@ def update_settings():
         if latitude == "" and longitude == "":
             current_user.latitude = None
             current_user.longitude = None
+
         elif not valid_coordinates(latitude, longitude):
             return jsonify(error="Coordenadas inválidas."), 400
+
         else:
             current_user.latitude = float(latitude)
             current_user.longitude = float(longitude)
 
     if interests_raw is not None:
-        interests = [i.strip() for i in interests_raw.split(",") if i.strip()]
-        valid_categories = {c.value for c in ExchangeCategory}
-        if any(i not in valid_categories for i in interests):
+        interests = [
+            interest.strip()
+            for interest in interests_raw.split(",")
+            if interest.strip()
+        ]
+
+        valid_categories = {category.value for category in ExchangeCategory}
+
+        if any(interest not in valid_categories for interest in interests):
             return jsonify(error="Selección de intereses inválida."), 400
+
         current_user.interests = interests
 
     if is_private is not None:
         current_user.is_private = is_private == "true"
 
     avatar = request.files.get("avatar")
+
     if avatar and avatar.filename != "":
         try:
-            current_user.avatar = save_image(avatar, old_filename=current_user.avatar)
+            current_user.avatar = save_image(
+                avatar,
+                old_filename=current_user.avatar,
+            )
         except InvalidImageError as exc:
             return jsonify(error=str(exc)), 400
 
     if new_password:
         if len(new_password) < 8:
-            return jsonify(error="La nueva contraseña debe tener al menos 8 caracteres."), 400
+            return jsonify(
+                error="La nueva contraseña debe tener al menos 8 caracteres."
+            ), 400
+
         current_user.set_password(new_password)
 
     db.session.commit()
