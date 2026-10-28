@@ -77,3 +77,66 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Formularios claros, adaptables y cómodos con teclado */
+.form-section {
+  min-width: 0;
+  border: 1px solid var(--border);
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+.form-section-title {
+  line-height: 1.35;
+}
+
+.type-card {
+  min-height: 108px;
+  justify-content: center;
+  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.type-card:focus-visible,
+.image-drop:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 3px;
+}
+
+.type-card-active {
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.type-card span {
+  line-height: 1.4;
+}
+
+.image-drop {
+  text-align: center;
+  line-height: 1.5;
+}
+
+.image-drop-preview {
+  max-width: 100%;
+}
+
+@media (max-width: 760px) {
+  .type-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .type-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-section {
+    padding: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .type-card {
+    transition: none;
+  }
+}

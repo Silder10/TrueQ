@@ -64,11 +64,6 @@ export function AppLayout() {
                 ))}
               </nav>
 
-              <div className="header-search">
-                <Search size={17} aria-hidden="true" />
-                <input aria-label="Buscar intercambios" placeholder="Buscar intercambios..." />
-              </div>
-
               <div className="app-header-actions">
                 <NavLink to="/notifications" className="icon-btn notification-bell" aria-label="Notificaciones">
                   <Bell size={19} />
