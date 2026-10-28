@@ -8,10 +8,12 @@ export function NotificationsPage() {
   const [error, setError] = useState(null);
 
   const load = () => {
-    setLoading(true);
     api
       .get("/api/notifications")
-      .then((data) => setItems(data.items))
+      .then((data) => {
+        setItems(data.items);
+        setError(null);
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   };
@@ -19,8 +21,6 @@ export function NotificationsPage() {
   useEffect(() => {
     load();
     api.post("/api/notifications/read-all").catch(() => {});
-    // marcamos como leídas al abrir la página (no al listar en background,
-    // que era el bug original que impedía tener un contador con sentido)
   }, []);
 
   return (
