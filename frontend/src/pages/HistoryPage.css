@@ -44,3 +44,37 @@
     align-items: flex-start;
   }
 }
+
+
+.history-row {
+  min-width: 0;
+  padding: clamp(0.75rem, 2vw, 1rem);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.history-image {
+  flex: 0 0 56px;
+  background: var(--bg);
+}
+
+.history-info {
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+
+.history-participant {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 480px) {
+  .history-row {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .history-info {
+    min-width: 0;
+  }
+}
