@@ -20,3 +20,40 @@
     align-items: flex-start;
   }
 }
+
+
+.request-row {
+  min-width: 0;
+  border: 1px solid var(--border);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.request-row > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.request-row .btn {
+  min-height: 44px;
+}
+
+.notification-unread {
+  border-left-width: 4px;
+}
+
+@media (max-width: 480px) {
+  .request-row {
+    align-items: stretch;
+  }
+
+  .request-row > .btn,
+  .request-row > div:last-child {
+    max-width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .request-row {
+    transition: none;
+  }
+}
