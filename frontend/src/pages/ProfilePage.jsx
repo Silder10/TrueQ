@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Flag, MapPin, Star, UserX } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api, uploadUrl } from "../api/client";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { ExchangeCard } from "../components/ExchangeCard";
 import { ReportModal } from "../components/ReportModal";
 import "./ProfilePage.css";

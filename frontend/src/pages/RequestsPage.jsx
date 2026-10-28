@@ -16,15 +16,19 @@ export function RequestsPage() {
   const [busyId, setBusyId] = useState(null);
 
   const load = () => {
-    setLoading(true);
     api
       .get("/api/exchanges/requests")
-      .then((data) => setItems(data.items))
+      .then((data) => {
+        setItems(data.items);
+        setError(null);
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   };
 
-  useEffect(load, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   const resolve = async (requestId, action) => {
     setBusyId(requestId);

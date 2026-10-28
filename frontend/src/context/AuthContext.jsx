@@ -1,7 +1,7 @@
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { api, resetCsrfToken } from "../api/client";
 
-const AuthContext = createContext(null);
+import { useCallback, useEffect, useState } from "react";
+import { AuthContext } from "./AuthContext.js";
+import { api, resetCsrfToken } from "../api/client";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -14,17 +14,60 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    refreshUser().finally(() => setLoading(false));
+    let cancelled = false;
+
+    const initialize = async () => {
+      try {
+        await refreshUser();
+      } catch {
+        if (!cancelled) {
+          setUser(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    initialize();
+
+    return () => {
+      cancelled = true;
+    };
   }, [refreshUser]);
 
   const login = async (identifier, password) => {
-    const data = await api.post("/api/auth/login", { identifier, password });
+    const data = await api.post("/api/auth/login", {
+      identifier,
+      password,
+    });
+
     setUser(data.user);
     return data.user;
   };
 
-  const register = async (username, email, password, interests = [], city = "", latitude = null, longitude = null, phone = "") => {
-    const data = await api.post("/api/auth/register", { username, email, phone, password, interests, city, latitude, longitude });
+  const register = async (
+    username,
+    email,
+    password,
+    interests = [],
+    city = "",
+    latitude = null,
+    longitude = null,
+    phone = ""
+  ) => {
+    const data = await api.post("/api/auth/register", {
+      username,
+      email,
+      phone,
+      password,
+      interests,
+      city,
+      latitude,
+      longitude,
+    });
+
     setUser(data.user);
     return data.user;
   };
@@ -35,15 +78,19 @@ export function AuthProvider({ children }) {
     resetCsrfToken();
   };
 
+  const value = {
+    user,
+    loading,
+    login,
+    register,
+    logout,
+    refreshUser,
+    setUser,
+  };
+
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, login, register, logout, refreshUser }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth debe usarse dentro de <AuthProvider>");
-  return ctx;
 }

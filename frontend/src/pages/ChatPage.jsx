@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Bell, BellOff, Image as ImageIcon, MoreVertical, Send, ShieldOff, UserX } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { api, uploadUrl } from "../api/client";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { getSocket } from "../api/socket";
 import "./ChatPage.css";
 import "./AdminPage.css";
