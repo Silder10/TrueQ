@@ -32,6 +32,9 @@ class BaseConfig:
     # NO deben apuntar al backend/API sino a la SPA. Por defecto, el primer
     # origen configurado en CORS_ORIGINS.
     FRONTEND_URL = os.getenv("FRONTEND_URL", CORS_ORIGINS[0])
+    
+    RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+    MAIL_FROM = os.getenv("MAIL_FROM", "onboarding@resend.dev")
 
     WTF_CSRF_TIME_LIMIT = None  # el token dura toda la sesión, no 1h por defecto
 
