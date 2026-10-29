@@ -50,7 +50,20 @@ export function RegisterPage() {
       const hasContact = form.email.includes("@") || form.phone.trim().length >= 7;
       return form.username.trim().length >= 3 && hasContact;
     }
-    if (step === 2) return form.password.length >= 8;
+    
+  if (step === 2) {
+    const password = form.password;
+
+    return (
+      password.length >= 8 &&
+      password.length <= 128 &&
+      /[A-Z]/.test(password) &&
+      /[a-z]/.test(password) &&
+      /\d/.test(password) &&
+      /[^A-Za-z0-9\s]/.test(password)
+    );
+  }
+
     return true;
   };
 
@@ -129,11 +142,14 @@ export function RegisterPage() {
           </div>
         )}
 
+        
         {step === 2 && (
           <div className="stack">
             <h2>Crea tu contraseña</h2>
+
             <div className="field">
               <label htmlFor="password">Contraseña</label>
+
               <input
                 id="password"
                 type="password"
@@ -141,14 +157,44 @@ export function RegisterPage() {
                 onChange={update("password")}
                 autoComplete="new-password"
               />
+
+              <div className="password-requirements">
+                <p>Tu contraseña debe cumplir estos requisitos:</p>
+
+                <ul>
+                  <li className={form.password.length >= 8 ? "requirement-met" : ""}>
+                    Al menos 8 caracteres
+                  </li>
+
+                  <li className={form.password.length <= 128 && form.password.length > 0 ? "requirement-met" : ""}>
+                    Máximo 128 caracteres
+                  </li>
+
+                  <li className={/[A-Z]/.test(form.password) ? "requirement-met" : ""}>
+                    Una letra mayúscula
+                  </li>
+
+                  <li className={/[a-z]/.test(form.password) ? "requirement-met" : ""}>
+                    Una letra minúscula
+                  </li>
+
+                  <li className={/\d/.test(form.password) ? "requirement-met" : ""}>
+                    Un número
+                  </li>
+
+                  <li className={/[^A-Za-z0-9\s]/.test(form.password) ? "requirement-met" : ""}>
+                    Un carácter especial (!, @, #, etc.)
+                  </li>
+                </ul>
+              </div>
+
               {fieldErrors.password ? (
                 <div className="field-error">{fieldErrors.password}</div>
-              ) : (
-                <div className="field-hint">Mínimo 8 caracteres.</div>
-              )}
+              ) : null}
             </div>
           </div>
         )}
+
 
         {step === 3 && (
           <div className="stack">
