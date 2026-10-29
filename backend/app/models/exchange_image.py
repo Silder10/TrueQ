@@ -21,12 +21,25 @@ class ExchangeImage(db.Model):
         db.ForeignKey("exchanges.id", ondelete="CASCADE"),
         nullable=False,
     )
-    filename = db.Column(db.String(255), nullable=False)
-    position = db.Column(db.Integer, nullable=False, default=0)
+
+    # Nombre Python compatible con las rutas existentes.
+    # Nombre real de la columna en MySQL: image_url.
+    filename = db.Column(
+        "image_url",
+        db.String(255),
+        nullable=False,
+    )
+
+    position = db.Column(
+        db.Integer,
+        nullable=False,
+        default=0,
+    )
+
     created_at = db.Column(
         db.DateTime,
         default=datetime.utcnow,
-        nullable=False,
+        nullable=True,
     )
 
     def to_dict(self):
