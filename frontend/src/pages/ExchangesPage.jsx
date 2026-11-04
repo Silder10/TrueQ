@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Package, Search, Wrench, Boxes, MapPin, Plus } from "lucide-react";
 import { api } from "../api/client";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { ExchangeCard } from "../components/ExchangeCard";
 import "./ExchangesPage.css";
 
@@ -30,7 +30,6 @@ export function ExchangesPage() {
       params.set("radius_km", String(radiusKm));
     }
 
-    setLoading(true);
     const timeout = setTimeout(() => {
       api
         .get(`/api/exchanges?${params.toString()}`)

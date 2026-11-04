@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, CheckCircle, Flag, ImagePlus, MapPin, MessageCircle, Pencil, Repeat, Star, Trash2, X, XCircle } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, uploadUrl } from "../api/client";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { ReportModal } from "../components/ReportModal";
 import "./ExchangeDetailPage.css";
 
@@ -74,7 +74,6 @@ export function ExchangeDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [requestState, setRequestState] = useState("idle");
-  const [myRequests, setMyRequests] = useState([]);
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -121,7 +120,6 @@ export function ExchangeDetailPage() {
 
   const handleComplete = async () => {
     setCompleting(true);
-    setError(null);
     setError(null);
     try {
       const data = await api.post(`/api/exchanges/${id}/complete`);

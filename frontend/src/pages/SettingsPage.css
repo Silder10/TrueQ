@@ -1,0 +1,132 @@
+
+/* TRUEQ — AJUSTES DE CUENTA */
+.settings-page {
+  width: min(100%, 760px);
+  margin: 0 auto;
+}
+
+.settings-heading {
+  margin-bottom: var(--space-2);
+}
+
+.settings-description {
+  color: var(--ink-soft);
+  margin-bottom: var(--space-4);
+}
+
+.settings-section {
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.settings-section-title {
+  margin-bottom: var(--space-1);
+  font-size: 1.1rem;
+}
+
+.settings-section-description {
+  margin-bottom: var(--space-4);
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+.settings-theme-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-muted);
+}
+
+.settings-theme-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.settings-theme-copy strong {
+  color: var(--ink);
+}
+
+.settings-theme-copy span {
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+
+.settings-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.settings-theme-toggle:hover {
+  border-color: var(--secondary);
+}
+
+.settings-theme-toggle:focus-visible {
+  outline: 3px solid var(--secondary);
+  outline-offset: 3px;
+}
+
+.settings-interests {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.settings-location-button {
+  margin-top: var(--space-2);
+}
+
+.settings-avatar-input {
+  padding: var(--space-2) !important;
+}
+
+.settings-private-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.settings-private-option input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--secondary);
+}
+
+.settings-submit {
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .settings-section {
+    padding: var(--space-3);
+  }
+
+  .settings-theme-option {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .settings-theme-toggle {
+    width: 100%;
+    justify-content: center;
+  }
+}

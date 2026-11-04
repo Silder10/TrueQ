@@ -4,7 +4,7 @@ import {
   Plus, Search, Settings, Shield, User, X,
 } from "lucide-react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { api, uploadUrl } from "../api/client";
 import "./AppLayout.css";
 

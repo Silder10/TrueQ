@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { LocateFixed } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { detectLocation } from "../utils/geolocation";
 import "./AuthPage.css";
 
