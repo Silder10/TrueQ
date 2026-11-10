@@ -4,7 +4,7 @@ import click
 from flask import Flask, jsonify
 
 from app.config import CONFIG_BY_NAME
-from app.extensions import cors, csrf, db, login_manager, migrate, socketio
+from app.extensions import cache, cors, csrf, db, login_manager, migrate, socketio
 
 
 def create_app(config_name=None):
@@ -31,6 +31,15 @@ def _register_extensions(app):
     # import circular: los modelos importan `db` desde app.extensions,
     # así que deben cargarse después de que db.init_app ya corrió.
     from app import models  # noqa: F401
+
+    cache.init_app(
+        app,
+        config={"CACHE_TYPE": "SimpleCache", "CACHE_DEFAULT_TIMEOUT": 60},
+    )
+
+    from app.services.cache_invalidation import register_cache_invalidation
+
+    register_cache_invalidation()
 
     cors.init_app(
         app,

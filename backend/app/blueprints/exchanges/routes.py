@@ -4,7 +4,7 @@ from datetime import datetime
 from flask import Blueprint, current_app, jsonify, request
 from flask_login import current_user, login_required
 
-from app.extensions import db
+from app.extensions import cache, db
 from app.models import (
     Exchange,
     ExchangeCategory,
@@ -19,6 +19,7 @@ from app.models import (
 from app.services.geolocation import distance_km
 from app.services.notifications import notify
 from app.services.uploads import InvalidImageError, save_image
+from app.services.content_filter import check_content, find_duplicate
 from app.utils import paginated_response
 
 exchanges_bp = Blueprint("exchanges", __name__, url_prefix="/api/exchanges")
@@ -28,6 +29,17 @@ DEFAULT_SEARCH_RADIUS_KM = 10
 MIN_SEARCH_RADIUS_KM = 1
 MAX_SEARCH_RADIUS_KM = 200
 
+def _exchanges_cache_key():
+    return f"exchanges:{current_user.id}:{request.full_path}"
+
+
+def _only_ok(response):
+    status = (
+        response[1]
+        if isinstance(response, tuple) and len(response) > 1
+        else getattr(response, "status_code", 200)
+    )
+    return status == 200
 
 def _exchange_with_distance(exchange):
     data = exchange.to_dict()
@@ -45,6 +57,7 @@ def _exchange_with_distance(exchange):
 
 @exchanges_bp.get("")
 @login_required
+@cache.cached(timeout=60, key_prefix=_exchanges_cache_key, response_filter=_only_ok)
 def list_exchanges():
     search = request.args.get("search", "").strip()
     category = request.args.get("category", "").strip()
@@ -179,6 +192,16 @@ def create_exchange():
     if errors:
         return jsonify(error="Datos inválidos.", fields=errors), 400
 
+    problem = check_content(title, offers, seeks, description)
+    if problem:
+        return jsonify(error=problem), 400
+
+    duplicate = find_duplicate(current_user.id, title, offers, seeks)
+    if duplicate:
+        return jsonify(
+            error="Ya tienes una publicación igual o muy parecida."
+        ), 409
+
     filename = "exchange.png"
     image = request.files.get("image")
 
@@ -295,6 +318,26 @@ def update_exchange(exchange_id):
             )
         except InvalidImageError as exc:
             return jsonify(error=str(exc)), 400
+
+    problem = check_content(
+        exchange.title, exchange.offers, exchange.seeks, exchange.description)
+    
+    if problem:
+        db.session.rollback()
+        return jsonify(error=problem), 400
+
+    duplicate = find_duplicate(
+        current_user.id,
+        exchange.title,
+        exchange.offers,
+        exchange.seeks,
+        exclude_id=exchange.id,
+    )
+    if duplicate:
+        db.session.rollback()
+        return jsonify(
+            error="Ya tienes una publicación igual o muy parecida."
+        ), 409
 
     # RF15: toda edición requiere una nueva revisión administrativa.
     exchange.moderation_status = ModerationStatus.PENDIENTE

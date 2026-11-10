@@ -1,4 +1,5 @@
 from flask_cors import CORS
+from flask_caching import Cache
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_socketio import SocketIO
@@ -10,6 +11,7 @@ migrate = Migrate()
 cors = CORS()
 csrf = CSRFProtect()
 socketio = SocketIO()
+cache = Cache()
 
 login_manager = LoginManager()
 # No hay páginas server-rendered de login: si Flask-Login redirige por falta de
