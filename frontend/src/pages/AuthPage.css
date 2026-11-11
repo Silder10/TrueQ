@@ -864,3 +864,567 @@
     transform: rotate(45deg);
     transform-origin: left center;
 }
+
+
+/* ========================================
+   LOGIN: panel derecho (réplica de la guía)
+   ======================================== */
+
+.auth-screen--login {
+    font-family: "Montserrat Variable", "Montserrat", "Segoe UI", sans-serif;
+}
+
+.auth-screen--login .auth-card {
+    position: relative;
+    overflow: hidden;
+    max-width: none;
+    margin: 0;
+    padding: 3rem clamp(1.5rem, 6vw, 6.5rem);
+    background: #f7f9fc;
+}
+
+
+/* Formas turquesa suaves en las esquinas */
+
+.auth-screen--login .auth-card::before,
+.auth-screen--login .auth-card::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    background: #e3f3f2;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.auth-screen--login .auth-card::before {
+    width: 520px;
+    height: 520px;
+    top: -330px;
+    right: -170px;
+}
+
+.auth-screen--login .auth-card::after {
+    width: 460px;
+    height: 460px;
+    bottom: -280px;
+    right: -150px;
+    opacity: 0.8;
+}
+
+.auth-screen--login .auth-card>* {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 580px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+
+/* Encabezado */
+
+.auth-screen--login .auth-heading {
+    margin-bottom: 2.8rem;
+}
+
+.auth-screen--login .auth-heading h2 {
+    margin: 0 0 0.7rem;
+    font-family: inherit;
+    font-size: clamp(2.2rem, 3vw, 2.9rem);
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: #0f2e4a;
+}
+
+.auth-screen--login .auth-heading p {
+    margin: 0;
+    font-family: inherit;
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: #8591ad;
+}
+
+
+/* Campos */
+
+.auth-screen--login .auth-card .stack {
+    gap: 1.6rem;
+}
+
+.auth-screen--login .auth-card .field {
+    gap: 0.75rem;
+}
+
+.auth-screen--login .auth-card .field label {
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0f2e4a;
+}
+
+.auth-screen--login .input-wrap {
+    position: relative;
+}
+
+.auth-screen--login .auth-card .field input {
+    min-height: 62px;
+    padding: 0 3.4rem 0 4rem;
+    border: 1px solid #dbe3ec;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(15, 46, 74, 0.04);
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #0f2e4a;
+}
+
+.auth-screen--login .auth-card .field input::placeholder {
+    color: #9aa6bb;
+    font-weight: 500;
+}
+
+.auth-screen--login .input-icon {
+    position: absolute;
+    top: 50%;
+    left: 1.35rem;
+    width: 24px;
+    height: 24px;
+    transform: translateY(-50%);
+    color: #8e9bb2;
+    pointer-events: none;
+}
+
+.auth-screen--login .input-toggle {
+    position: absolute;
+    top: 50%;
+    right: 1.1rem;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #8e9bb2;
+    cursor: pointer;
+    transform: translateY(-50%);
+}
+
+.auth-screen--login .input-toggle:hover {
+    color: #0db7a5;
+}
+
+.auth-screen--login .input-toggle:focus-visible {
+    outline: 3px solid rgba(13, 183, 165, 0.3);
+}
+
+.auth-screen--login .input-toggle svg {
+    width: 24px;
+    height: 24px;
+}
+
+
+/* ¿Olvidaste tu contraseña? */
+
+.auth-screen--login .auth-forgot {
+    align-self: flex-end;
+    margin-top: -0.1rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #00a99d;
+    text-decoration: none;
+}
+
+.auth-screen--login .auth-forgot:hover {
+    text-decoration: underline;
+}
+
+
+/* Botón Entrar */
+
+.auth-screen--login .auth-card .btn-primary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    min-height: 62px;
+    margin-top: 0.6rem;
+    border: 0;
+    border-radius: 14px;
+    background: #00b3a8;
+    box-shadow: 0 12px 24px rgba(0, 179, 168, 0.28);
+    font-family: inherit;
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+}
+
+.auth-screen--login .auth-card .btn-primary:hover:not(:disabled) {
+    background: #00a096;
+    box-shadow: 0 14px 28px rgba(0, 179, 168, 0.34);
+}
+
+.auth-screen--login .btn-arrow {
+    width: 22px;
+    height: 22px;
+}
+
+
+/* Registro */
+
+.auth-screen--login .auth-card .auth-switch {
+    margin-top: 2rem;
+    text-align: center;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #8791a7;
+}
+
+.auth-screen--login .auth-card .auth-switch a {
+    margin-left: 0.3rem;
+    font-weight: 700;
+    color: #00a99d;
+}
+
+
+/* Logo y mensaje de la izquierda con Montserrat */
+
+.auth-screen--login .auth-brand h1,
+.auth-screen--login .auth-visual-copy h2,
+.auth-screen--login .auth-visual-copy p {
+    font-family: inherit;
+}
+
+@media (max-width: 860px) {
+    .auth-screen--login .auth-card {
+        padding: 2rem 1.5rem 2.5rem;
+    }
+    .auth-screen--login .auth-heading {
+        margin-bottom: 2rem;
+    }
+}
+
+
+/* Fondo del panel izquierdo del login (réplica de la guía) */
+
+.auth-screen--login .auth-visual {
+    background: radial-gradient(ellipse at 100% 100%, rgba(42, 134, 148, 0.75) 0%, transparent 55%), radial-gradient(ellipse at 100% 20%, rgba(32, 103, 120, 0.45) 0%, transparent 45%), linear-gradient(160deg, #0a2840 0%, #072a3d 50%, #0a3a4b 100%);
+}
+
+
+/* ========================================
+   LOGIN: versión móvil (según referencia)
+   ======================================== */
+
+.auth-screen--login .auth-background-art--mobile {
+    display: none;
+}
+
+@media (max-width: 860px) {
+    .auth-screen--login {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+        background: #f7f9fc;
+    }
+    .auth-screen--login .auth-background-art--desktop {
+        display: none;
+    }
+    .auth-screen--login .auth-background-art--mobile {
+        display: block;
+    }
+    /* Panel visual superior */
+    .auth-screen--login .auth-visual {
+        min-height: min(96vw, 440px);
+        padding: 2.2rem clamp(1.5rem, 9vw, 3.5rem) 3.8rem;
+        gap: 1.5rem;
+        justify-content: space-between;
+        background: radial-gradient(ellipse at 95% 0%, rgba(26, 104, 122, 0.85) 0%, transparent 55%), linear-gradient(170deg, #02182b 0%, #032338 60%, #052c3f 100%);
+    }
+    /* Logo */
+    .auth-screen--login .auth-brand {
+        gap: 12px;
+    }
+    .auth-screen--login .auth-brand h1 {
+        font-size: clamp(1.8rem, 8vw, 2.4rem);
+        letter-spacing: -1px;
+    }
+    .auth-screen--login .auth-logo-mark {
+        flex: 0 0 36px;
+        width: 36px;
+        height: 36px;
+        border-width: 5px;
+    }
+    .auth-screen--login .auth-logo-mark::after {
+        width: 15px;
+        height: 5px;
+        right: -10px;
+    }
+    /* Mensaje de marca: sin línea de acento, «Renueva.» en otra línea */
+    .auth-screen--login .auth-accent-line {
+        display: none;
+    }
+    .auth-screen--login .auth-visual-copy {
+        margin: 0;
+        padding: 0;
+    }
+    .auth-screen--login .auth-visual-copy h2 {
+        margin: 0 0 0.8rem;
+        font-size: clamp(1.4rem, 6.4vw, 2rem);
+        line-height: 1.25;
+        letter-spacing: -0.3px;
+        white-space: normal;
+    }
+    .auth-screen--login .auth-visual-copy h2 span {
+        display: block;
+    }
+    .auth-screen--login .auth-visual-copy p {
+        max-width: none;
+        font-size: clamp(0.85rem, 3.6vw, 1rem);
+        line-height: 1.6;
+        text-wrap: balance;
+    }
+    /* Panel blanco con esquinas muy redondeadas */
+    .auth-screen--login .auth-card {
+        z-index: 2;
+        margin-top: -2rem;
+        padding: 2.4rem clamp(1.5rem, 9vw, 3.5rem) 2.5rem;
+        border-radius: 32px 32px 0 0;
+        justify-content: flex-start;
+    }
+    .auth-screen--login .auth-card::before {
+        width: 300px;
+        height: 300px;
+        top: -200px;
+        right: -120px;
+    }
+    .auth-screen--login .auth-card::after {
+        width: 260px;
+        height: 260px;
+        bottom: -170px;
+        right: -100px;
+    }
+    .auth-screen--login .auth-heading {
+        margin-bottom: 1.8rem;
+    }
+    .auth-screen--login .auth-heading h2 {
+        font-size: clamp(1.8rem, 7.5vw, 2.4rem);
+    }
+    .auth-screen--login .auth-heading p {
+        font-size: clamp(0.95rem, 4vw, 1.1rem);
+    }
+    .auth-screen--login .auth-card .stack {
+        gap: 1.3rem;
+    }
+    .auth-screen--login .auth-card .field input {
+        min-height: 56px;
+        padding-left: 3.4rem;
+        border-radius: 14px;
+        font-size: 0.9rem;
+    }
+    .auth-screen--login .input-icon {
+        left: 1.1rem;
+        width: 22px;
+        height: 22px;
+    }
+    .auth-screen--login .auth-card .btn-primary {
+        min-height: 56px;
+        border-radius: 14px;
+        font-size: 1.05rem;
+    }
+    .auth-screen--login .auth-card .auth-switch {
+        margin-top: 1.6rem;
+        font-size: 0.92rem;
+    }
+}
+
+
+/* Correcciones móvil */
+
+@media (max-width: 860px) {
+    /* Encuadre de la Q: anillo a la derecha, sin ampliarse de más */
+    .auth-screen--login .auth-background-art--mobile {
+        inset: auto;
+        top: 0;
+        right: 0;
+        left: auto;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1024 / 664;
+    }
+    /* Forma turquesa: más pequeña y solo en la esquina inferior */
+    .auth-screen--login .auth-card::before {
+        display: none;
+    }
+    .auth-screen--login .auth-card::after {
+        width: 240px;
+        height: 240px;
+        bottom: -150px;
+        right: -100px;
+    }
+    /* Que el panel blanco llegue hasta abajo */
+    .auth-screen--login .auth-card {
+        min-height: 60vh;
+        padding-bottom: 3rem;
+    }
+}
+
+
+/* ========================================
+   REGISTRO: ajustes sobre el estilo del login
+   ======================================== */
+
+
+/* En móvil «TrueQ» no debe saltar a otra línea */
+
+.auth-screen--register .auth-visual-copy h2 span {
+    display: inline;
+}
+
+
+/* Barra de progreso turquesa */
+
+.auth-screen--register .step-progress {
+    margin-bottom: 2rem;
+}
+
+.auth-screen--register .step-progress span {
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #8591ad;
+}
+
+.auth-screen--register .step-progress-bar {
+    height: 8px;
+    margin-top: 0.6rem;
+    background: #e3ebf2;
+}
+
+.auth-screen--register .step-progress-fill {
+    background: linear-gradient(90deg, #00b3a8, #12c5b4);
+}
+
+
+/* Títulos de cada paso */
+
+.auth-screen--register .auth-card .stack>h2 {
+    margin: 0 0 0.4rem;
+    font-family: inherit;
+    font-size: clamp(1.8rem, 3vw, 2.5rem);
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: #0f2e4a;
+}
+
+
+/* Textos de ayuda y errores */
+
+.auth-screen--register .field-hint,
+.auth-screen--register .field-error {
+    font-family: inherit;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+.auth-screen--register .field-hint {
+    color: #8591ad;
+}
+
+
+/* Requisitos de contraseña */
+
+.auth-screen--register .password-requirements {
+    margin-top: 1rem;
+    padding: 1rem 1.2rem;
+    border: 1px solid #dbe3ec;
+    border-radius: 12px;
+    background: #ffffff;
+    font-family: inherit;
+}
+
+.auth-screen--register .password-requirements li.requirement-met,
+.auth-screen--register .password-requirements li.requirement-met::before {
+    color: #00a99d;
+}
+
+
+/* Tarjetas de intereses */
+
+.auth-screen--register .interest-card {
+    padding: 1rem 1.2rem;
+    border: 1px solid #dbe3ec;
+    border-radius: 14px;
+    background: #ffffff;
+    font-family: inherit;
+    box-shadow: 0 1px 2px rgba(15, 46, 74, 0.04);
+}
+
+.auth-screen--register .interest-card:hover {
+    border-color: #00b3a8;
+}
+
+.auth-screen--register .interest-card-active {
+    border-color: #00b3a8;
+    background: #e8f7f5;
+    box-shadow: 0 0 0 1px #00b3a8;
+}
+
+
+/* Resumen final */
+
+.auth-screen--register .confirm-summary {
+    padding: 1.2rem;
+    border: 1px solid #dbe3ec;
+    border-radius: 14px;
+    background: #ffffff;
+    font-family: inherit;
+}
+
+
+/* Botones secundarios (Atrás, Usar mi ubicación) */
+
+.auth-screen--register .btn-outline {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 62px;
+    border: 1px solid #00b3a8;
+    border-radius: 14px;
+    background: #ffffff;
+    color: #00a99d;
+    font-family: inherit;
+    font-weight: 600;
+}
+
+.auth-screen--register .btn-outline:hover:not(:disabled) {
+    background: #e8f7f5;
+}
+
+
+/* Botón principal desactivado: más claro pero legible, sin sombra */
+
+.auth-screen--register .auth-card .btn-primary:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+    box-shadow: none;
+}
+
+.auth-screen--register .step-actions {
+    margin-top: 2rem;
+}
+
+@media (max-width: 860px) {
+    .auth-screen--register .auth-card .btn-primary,
+    .auth-screen--register .btn-outline {
+        min-height: 56px;
+    }
+}
+
+.auth-card h2 {
+    text-align: center;
+    transform: translateX(15px);
+}
