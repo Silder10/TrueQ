@@ -1,6 +1,9 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
+import { AuthVisual } from "../components/AuthVisual";
+import "@fontsource-variable/montserrat";
 import "./AuthPage.css";
 
 export function ForgotPasswordPage() {
@@ -13,6 +16,7 @@ export function ForgotPasswordPage() {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
+
     try {
       await api.post("/api/auth/forgot-password", { email });
       setSent(true);
@@ -24,38 +28,76 @@ export function ForgotPasswordPage() {
   };
 
   return (
-    <div className="auth-screen">
-      <div className="auth-visual">
-        <span className="auth-visual-icon">🔑</span>
-        <h1>Recuperá tu acceso</h1>
-        <p>Te mandamos un enlace para que puedas elegir una contraseña nueva.</p>
-      </div>
+    <div className="auth-screen auth-screen--login">
+      <AuthVisual
+        title={<>Intercambia. Conecta. <span>Renueva.</span></>}
+        text="Dale una nueva oportunidad a lo que tienes y encuentra lo que necesitas."
+      />
 
       <div className="auth-card">
-        <h2>¿Olvidaste tu contraseña?</h2>
+        <h2>Recupera tu contraseña</h2>
 
-        {error && <div className="banner banner-error">{error}</div>}
+        <p className="auth-description">
+          No te preocupes. Ingresa tu correo electrónico y te enviaremos
+          un enlace para recuperar el acceso a tu cuenta.
+        </p>
+
+        {error && (
+          <div className="banner banner-error">
+            {error}
+          </div>
+        )}
 
         {sent ? (
           <div className="banner banner-success">
-            Si ese correo existe en nuestro sistema, ya deberías tener un enlace de recuperación.
-            Revisá tu bandeja de entrada (y spam).
+            Si ese correo existe en nuestro sistema, ya deberías tener
+            un enlace de recuperación. Revisa tu bandeja de entrada
+            y la carpeta de spam.
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="stack">
+            
             <div className="field">
-              <label htmlFor="email">Correo</label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-              />
+              <label htmlFor="email">Correo electrónico</label>
+
+              <div className="input-wrap">
+                <svg
+                  className="input-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <rect x="3" y="5" width="18" height="14" rx="2.5" />
+                  <path d="M3.5 7l8.5 6 8.5-6" />
+                </svg>
+
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Ingresa tu correo electrónico"
+                  required
+                  autoComplete="email"
+                />
+              </div>
             </div>
-            <button type="submit" className="btn btn-primary btn-full" disabled={submitting}>
-              {submitting ? <span className="spinner" /> : "Enviar enlace"}
+
+
+            <button
+              type="submit"
+              className="btn btn-primary btn-full"
+              disabled={submitting}
+            >
+              {submitting ? (
+                <span className="spinner" />
+              ) : (
+                "Enviar enlace de recuperación"
+              )}
             </button>
           </form>
         )}
