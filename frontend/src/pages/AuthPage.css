@@ -1428,3 +1428,41 @@
     text-align: center;
     transform: translateX(15px);
 }
+
+
+/* ========================================
+   RESTABLECER CONTRASEÑA
+   ======================================== */
+
+.auth-screen--reset .auth-visual-copy h2 span {
+    display: inline;
+}
+
+.auth-screen--reset .password-requirements {
+    margin-top: 1rem;
+    padding: 1rem 1.2rem;
+    border: 1px solid #dbe3ec;
+    border-radius: 12px;
+    background: #ffffff;
+    font-family: inherit;
+}
+
+.auth-screen--reset .password-requirements li.requirement-met,
+.auth-screen--reset .password-requirements li.requirement-met::before {
+    color: #00a99d;
+}
+
+.auth-screen--reset .auth-card .btn-primary:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+    box-shadow: none;
+}
+
+.auth-screen--reset .banner {
+    font-family: inherit;
+    border-radius: 12px;
+}
+
+.auth-screen--reset .auth-card .btn-primary {
+    text-decoration: none;
+}
